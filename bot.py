@@ -4,9 +4,9 @@ from telegram.ext import Application, MessageHandler, CommandHandler, ContextTyp
 TOKEN = "8603510237:AAFni5_cboiPIuZIR2RD6mm9RU5vsrRlCZA"
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("Yᴏᴏ.. {first} 💐
+    await update.message.reply_text(""" Yᴏᴏ.. {first} 💐
     🔒 Wᴇʟᴄᴏᴍᴇ Tᴏ Hᴀᴢᴇ Rᴇsᴇᴛ Bᴏᴛ
-    ")
+    """)
 
 async def echo(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(update.message.text)
