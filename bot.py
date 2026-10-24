@@ -125,7 +125,7 @@ def check_hi2_email(email):
 		return _G
 	except Exception:return E
 SPINNER = ['◜', '◠', '◝', '◞', '◡', '◟']
-def animate_check(chat_id,email,stop_event,frames_per_sec=0.25):
+def animate_check(chat_id,email,stop_event,frames_per_sec=0.5):
 	C=stop_event;B=chat_id;A={_C:_A}
 	def E():
 		D=0
