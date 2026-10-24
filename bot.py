@@ -276,7 +276,7 @@ def process_bulk(chat_id,text):
 	for(O,E)in enumerate(B,1):
 		J=threading.Event();P=animate_check(C,E,J);K=check_hi2_email(E);J.set()
 		if K==_E:F,G='❌','Tᴀᴋᴇɴ'
-		elif K==_G:F,G='🔓','Fʀᴇᴇ'
+		elif K==_G:F,G='🍀','Fʀᴇᴇ'
 		else:F,G='❔','Uɴᴋɴᴏᴡɴ'
 		L=f"{O}. {F} <code>{E}</code> → <b>{G}</b>";I.append(L);P(L);time.sleep(1.)
 	Q='📊 <b>Aᴠᴀɪʟᴀʙɪʟɪᴛʏ Rᴇᴘᴏʀᴛ</b> 💐\n\n'+'\n'.join(I)+f"\n\n✅ <b>Tᴏᴛᴀʟ Cʜᴇᴄᴋᴇᴅ ‣</b> {len(B)}\n📢 <b>Cʜᴀɴɴᴇʟ ‣</b> @ErebusRedirect";send_message(C,Q,reply_markup={_H:[[{_B:_l,_M:_N}]]})
