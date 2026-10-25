@@ -8,7 +8,7 @@ import threading
 try:from colorama import Fore,Style,init;init()
 except:os.system('pip install colorama');from colorama import Fore,Style,init
 
-BOT_TOKEN= "8554922121:AAGtrCIqv5aug5Ps9j9HsoeW7ux68BYtZ5s"
+BOT_TOKEN= "8554922121:AAG61X8wopeLW27Df_ovxe9rIUqK2cpmYEg"
 API_URL=f"https://api.telegram.org/bot{BOT_TOKEN}"
 
 _l='Cʜᴀɴɴᴇʟ🪭'
