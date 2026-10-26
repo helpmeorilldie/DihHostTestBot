@@ -1,241 +1,710 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Glass UI — Concept</title>
-<style>
-:root {
-  --site-primary: #6c63ff;
-  --site-secondary: #e9e7ff;
-  --site-background: #f8f9fc;
-  --site-on-primary: #ffffff;
-  --site-on-secondary: #29245f;
-  --site-on-background: #171827;
-  --site-font-body: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  --site-font-heading: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  --site-heading-scale: 1;
-  --site-spacing-scale: 1;
-  --site-radius-scale: 1;
-  --site-decoration-opacity: 1;
-}
-* { box-sizing: border-box; }
-html, body { margin: 0; min-height: 100%; }
-body {
-  font-family: var(--site-font-body);
-  color: var(--site-on-background);
-  background: var(--site-background);
-}
-.app-root {
-  min-height: 100vh;
-  width: 100%;
-  border-radius: 0;
-  background-color: var(--site-background);
-  background-image:
-    radial-gradient(ellipse at 15% 12%, rgba(190, 185, 255, .30), transparent 34%),
-    radial-gradient(ellipse at 86% 82%, rgba(180, 226, 255, .34), transparent 31%);
-  overflow: hidden;
-  position: relative;
-  isolation: isolate;
-}
-.decor {
-  position: absolute;
-  z-index: -1;
-  pointer-events: none;
-  opacity: var(--site-decoration-opacity);
-  border: 1px solid rgba(255,255,255,.85);
-  background: rgba(255,255,255,.28);
-  box-shadow: 0 20px 70px rgba(70, 75, 140, .08);
-  backdrop-filter: blur(14px);
-}
-.decor-one { width: 240px; height: 240px; border-radius: 44% 56% 62% 38%; top: 90px; left: -95px; transform: rotate(24deg); }
-.decor-two { width: 290px; height: 290px; border-radius: 50%; right: -130px; bottom: 30px; }
-.nav {
-  max-width: 1160px;
-  margin: 0 auto;
-  padding: calc(28px * var(--site-spacing-scale)) 28px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 20px;
-}
-.brand { display: flex; align-items: center; gap: 11px; font-weight: 750; letter-spacing: -.04em; }
-.brand-mark {
-  width: 35px; height: 35px; border-radius: 12px;
-  display: grid; place-items: center; color: white;
-  background: linear-gradient(145deg, #8c83ff, #6158e8);
-  box-shadow: 0 7px 18px rgba(108,99,255,.25);
-}
-.nav-note { font-size: 13px; color: #74768a; }
-main {
-  max-width: 1160px;
-  margin: 0 auto;
-  padding: clamp(30px, 6vw, 80px) 28px 70px;
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(330px, .92fr);
-  align-items: center;
-  gap: clamp(38px, 7vw, 94px);
-}
-.eyebrow {
-  display: inline-flex; align-items: center; gap: 8px;
-  padding: 8px 12px; border-radius: 999px;
-  color: #554bd1; background: rgba(255,255,255,.72);
-  border: 1px solid rgba(108,99,255,.14);
-  font-size: 12px; font-weight: 700; letter-spacing: .07em; text-transform: uppercase;
-  box-shadow: 0 8px 24px rgba(46, 47, 90, .04);
-}
-.spark { width: 7px; height: 7px; border-radius: 50%; background: #7d73ff; box-shadow: 0 0 0 4px rgba(125,115,255,.13); }
-h1 {
-  font-family: var(--site-font-heading);
-  font-size: clamp(43px, 6vw, 76px);
-  line-height: 1.02;
-  letter-spacing: -.065em;
-  margin: 23px 0 20px;
-  font-weight: 780;
-}
-h1 span { color: #7066f2; }
-.lead { max-width: 470px; color: #6f7184; font-size: 17px; line-height: 1.75; margin: 0; }
-.actions { display: flex; align-items: center; gap: 13px; flex-wrap: wrap; margin-top: 31px; }
-button {
-  font: inherit; border: 0; cursor: pointer; transition: transform .18s ease, box-shadow .18s ease, background .18s ease;
-}
-button:hover { transform: translateY(-2px); }
-.primary {
-  padding: 14px 19px; border-radius: 14px; color: var(--site-on-primary);
-  background: var(--site-primary); box-shadow: 0 12px 25px rgba(108,99,255,.24); font-weight: 650;
-}
-.secondary {
-  padding: 13px 18px; border-radius: 14px; color: #55566b;
-  background: rgba(255,255,255,.62); border: 1px solid rgba(117,119,150,.16); font-weight: 600;
-}
-.microcopy { margin-top: 17px; color: #9293a3; font-size: 12px; }
-.preview-wrap { position: relative; padding: 18px 0 18px 10px; }
-.glass-card {
-  position: relative;
-  padding: 25px;
-  border-radius: calc(30px * var(--site-radius-scale));
-  background: rgba(255,255,255,.56);
-  border: 1px solid rgba(255,255,255,.92);
-  box-shadow: 0 30px 90px rgba(51, 54, 108, .14), inset 0 1px 0 rgba(255,255,255,.85);
-  backdrop-filter: blur(24px);
-  -webkit-backdrop-filter: blur(24px);
-}
-.card-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; }
-.card-title { font-weight: 750; letter-spacing: -.03em; }
-.dots { display: flex; gap: 5px; }
-.dots i { width: 6px; height: 6px; border-radius: 50%; background: #d4d3e6; }
-.profile {
-  display: flex; align-items: center; gap: 13px; padding: 16px;
-  border-radius: 20px; background: rgba(255,255,255,.62); border: 1px solid rgba(255,255,255,.9);
-}
-.avatar {
-  width: 48px; height: 48px; display: grid; place-items: center; border-radius: 17px;
-  color: #fff; font-size: 20px; font-weight: 700;
-  background: linear-gradient(140deg, #a6a0ff, #6d63ed);
-}
-.profile strong { display: block; font-size: 14px; }
-.profile small { display: block; color: #898a9c; font-size: 12px; margin-top: 4px; }
-.status { margin-left: auto; padding: 6px 9px; border-radius: 99px; color: #27856c; background: #e3f8ef; font-size: 10px; font-weight: 750; }
-.stats { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 13px; }
-.stat {
-  padding: 17px; border-radius: 18px; background: rgba(255,255,255,.49);
-  border: 1px solid rgba(255,255,255,.82);
-}
-.stat-label { font-size: 11px; color: #898a9c; }
-.stat-value { margin-top: 9px; font-size: 26px; font-weight: 760; letter-spacing: -.05em; }
-.trend { color: #2c9b79; font-size: 11px; margin-left: 5px; letter-spacing: 0; }
-.activity { margin-top: 13px; padding: 17px; border-radius: 18px; background: rgba(255,255,255,.46); border: 1px solid rgba(255,255,255,.8); }
-.activity-head { display: flex; justify-content: space-between; align-items: center; font-size: 12px; font-weight: 700; }
-.activity-head span { color: #9b9caf; font-weight: 500; }
-.bars { height: 72px; display: flex; align-items: end; gap: 9px; margin-top: 15px; }
-.bars i { display: block; flex: 1; border-radius: 7px 7px 3px 3px; background: linear-gradient(180deg, #a9a3ff, #7770f3); opacity: .85; }
-.bars i:nth-child(1) { height: 35%; opacity: .35; }
-.bars i:nth-child(2) { height: 53%; opacity: .5; }
-.bars i:nth-child(3) { height: 43%; opacity: .42; }
-.bars i:nth-child(4) { height: 73%; }
-.bars i:nth-child(5) { height: 60%; opacity: .7; }
-.bars i:nth-child(6) { height: 88%; }
-.bars i:nth-child(7) { height: 68%; opacity: .7; }
-.bars i:nth-child(8) { height: 100%; }
-.float-chip {
-  position: absolute; padding: 12px 15px; border-radius: 16px;
-  background: rgba(255,255,255,.76); border: 1px solid rgba(255,255,255,.95);
-  box-shadow: 0 15px 40px rgba(53,56,110,.12); backdrop-filter: blur(16px);
-  font-size: 12px; font-weight: 700; display: flex; align-items: center; gap: 9px;
-}
-.float-chip.top { top: -3px; right: -22px; }
-.float-chip.bottom { bottom: -2px; left: -17px; }
-.chip-icon { width: 27px; height: 27px; border-radius: 9px; display: grid; place-items: center; background: #efedff; color: #6b60ec; font-size: 14px; }
-footer { max-width: 1160px; margin: 0 auto; padding: 0 28px 25px; color: #a0a1b0; font-size: 11px; display: flex; justify-content: space-between; }
-@media (max-width: 820px) {
-  main { grid-template-columns: 1fr; gap: 48px; padding-top: 35px; }
-  .hero-copy { max-width: 600px; }
-  .preview-wrap { max-width: 520px; width: 100%; margin: 0 auto; }
-  .float-chip.top { right: -5px; }
-}
-@media (max-width: 480px) {
-  .nav { padding: 20px; }
-  main { padding: 30px 20px 55px; }
-  .glass-card { padding: 17px; }
-  .float-chip { font-size: 10px; padding: 9px 10px; }
-  .float-chip.bottom { left: -5px; }
-  footer { padding: 0 20px 20px; }
-}
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#080a12">
+
+    <title>Fake Mail Availability Checker Bot</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --bg: #080a12;
+            --cyan: #00e5ff;
+            --cyan-soft: rgba(0, 229, 255, 0.13);
+            --maroon: #801f45;
+            --text: #f5f7ff;
+            --muted: #9299ad;
+            --glass: rgba(255, 255, 255, 0.045);
+            --border: rgba(255, 255, 255, 0.11);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            min-height: 100vh;
+            font-family: 'Inter', sans-serif;
+            color: var(--text);
+            background:
+                radial-gradient(ellipse at 15% 20%, rgba(0, 229, 255, 0.10), transparent 40%),
+                radial-gradient(ellipse at 85% 75%, rgba(128, 31, 69, 0.23), transparent 42%),
+                var(--bg);
+            overflow-x: hidden;
+        }
+
+        body::before {
+            content: "";
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            opacity: 0.18;
+            background-image: radial-gradient(
+                rgba(255, 255, 255, 0.23) 0.7px,
+                transparent 0.7px
+            );
+            background-size: 25px 25px;
+            mask-image: linear-gradient(to bottom, black, transparent);
+        }
+
+        .container {
+            width: min(1100px, 90%);
+            margin: auto;
+        }
+
+
+        nav {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 28px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+        }
+
+        .brand-icon {
+            width: 42px;
+            height: 42px;
+            display: grid;
+            place-items: center;
+            border: 1px solid rgba(0, 229, 255, 0.3);
+            border-radius: 14px;
+            background: var(--cyan-soft);
+            box-shadow: 0 0 25px rgba(0, 229, 255, 0.08);
+            font-size: 21px;
+        }
+
+        .brand span {
+            color: var(--cyan);
+        }
+
+        .status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 9px 13px;
+            border-radius: 30px;
+            background: var(--glass);
+            border: 1px solid var(--border);
+            color: #b8c1d5;
+            font-size: 12px;
+        }
+
+        .status-dot {
+            height: 7px;
+            width: 7px;
+            border-radius: 50%;
+            background: var(--cyan);
+            box-shadow: 0 0 10px var(--cyan);
+        }
+
+
+        .hero {
+            min-height: 570px;
+            display: grid;
+            grid-template-columns: 1.15fr 0.85fr;
+            align-items: center;
+            gap: 65px;
+            padding: 75px 0;
+        }
+
+        .eyebrow {
+            display: inline-flex;
+            align-items: center;
+            gap: 9px;
+            padding: 9px 13px;
+            border-radius: 30px;
+            border: 1px solid rgba(0, 229, 255, 0.22);
+            background: rgba(0, 229, 255, 0.06);
+            color: var(--cyan);
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            margin-bottom: 25px;
+        }
+
+        h1 {
+            font-size: clamp(38px, 5vw, 62px);
+            line-height: 1.08;
+            letter-spacing: -2.8px;
+            font-weight: 800;
+            max-width: 620px;
+        }
+
+        h1 .highlight {
+            color: var(--cyan);
+            text-shadow: 0 0 35px rgba(0, 229, 255, 0.18);
+        }
+
+        .description {
+            color: var(--muted);
+            font-size: 15px;
+            line-height: 1.9;
+            max-width: 450px;
+            margin-top: 24px;
+        }
+
+        .powered {
+            color: #b9bfd0;
+            font-size: 13px;
+            margin-top: 20px;
+        }
+
+        .powered strong {
+            color: #f3a4c3;
+            letter-spacing: 1px;
+        }
+
+
+        .buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 13px;
+            margin-top: 32px;
+        }
+
+        .btn {
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            padding: 14px 23px;
+            border-radius: 13px;
+            font-family: inherit;
+            font-size: 13px;
+            font-weight: 700;
+            transition: 0.25s ease;
+        }
+
+        .btn-primary {
+            color: #061016;
+            background: var(--cyan);
+            box-shadow: 0 0 25px rgba(0, 229, 255, 0.14);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 0 35px rgba(0, 229, 255, 0.28);
+        }
+
+        .btn-secondary {
+            color: #f4f4fb;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            background: rgba(255, 255, 255, 0.045);
+        }
+
+        .btn-secondary:hover {
+            transform: translateY(-3px);
+            border-color: var(--cyan);
+            background: var(--cyan-soft);
+        }
+
+
+        .visual {
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 350px;
+        }
+
+        .glow {
+            position: absolute;
+            width: 230px;
+            height: 230px;
+            border-radius: 50%;
+            background: rgba(0, 229, 255, 0.15);
+            filter: blur(75px);
+        }
+
+        .mail-card {
+            position: relative;
+            width: 100%;
+            max-width: 340px;
+            padding: 27px;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 27px;
+            background: linear-gradient(
+                145deg,
+                rgba(255, 255, 255, 0.105),
+                rgba(255, 255, 255, 0.025)
+            );
+            backdrop-filter: blur(25px);
+            -webkit-backdrop-filter: blur(25px);
+            box-shadow:
+                0 25px 80px rgba(0, 0, 0, 0.35),
+                inset 0 1px 0 rgba(255, 255, 255, 0.08);
+            animation: float 5s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        .card-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 28px;
+        }
+
+        .card-label {
+            color: #a7afc2;
+            font-size: 12px;
+        }
+
+        .mail-symbol {
+            width: 53px;
+            height: 53px;
+            display: grid;
+            place-items: center;
+            font-size: 26px;
+            border-radius: 17px;
+            background: rgba(0, 229, 255, 0.1);
+            border: 1px solid rgba(0, 229, 255, 0.18);
+        }
+
+        .card-title {
+            font-size: 20px;
+            font-weight: 800;
+            margin-bottom: 8px;
+        }
+
+        .card-subtitle {
+            color: var(--muted);
+            font-size: 12px;
+            line-height: 1.7;
+        }
+
+        .divider {
+            height: 1px;
+            background: rgba(255, 255, 255, 0.09);
+            margin: 23px 0;
+        }
+
+        .feature {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin: 17px 0;
+            color: #d9deeb;
+            font-size: 12px;
+        }
+
+        .feature-icon {
+            width: 34px;
+            height: 34px;
+            display: grid;
+            place-items: center;
+            border-radius: 11px;
+            background: rgba(128, 31, 69, 0.2);
+            border: 1px solid rgba(200, 60, 110, 0.18);
+        }
+
+        .floating-tag {
+            position: absolute;
+            right: -18px;
+            bottom: 27px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 13px 16px;
+            border-radius: 15px;
+            background: rgba(14, 17, 29, 0.88);
+            border: 1px solid rgba(255, 255, 255, 0.13);
+            backdrop-filter: blur(18px);
+            box-shadow: 0 12px 35px rgba(0, 0, 0, 0.3);
+            font-size: 11px;
+            color: #dce4f3;
+        }
+
+        .floating-tag span {
+            color: var(--cyan);
+            font-size: 18px;
+        }
+
+
+        .developer {
+            padding: 25px 0 75px;
+        }
+
+        .developer-card {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 25px;
+            padding: 25px 29px;
+            border-radius: 22px;
+            border: 1px solid var(--border);
+            background: rgba(255, 255, 255, 0.035);
+            backdrop-filter: blur(18px);
+            -webkit-backdrop-filter: blur(18px);
+        }
+
+        .dev-left {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .avatar {
+            height: 54px;
+            width: 54px;
+            display: grid;
+            place-items: center;
+            border-radius: 18px;
+            background: linear-gradient(135deg, #00d9f5, #722044);
+            font-size: 23px;
+            box-shadow: 0 0 25px rgba(0, 229, 255, 0.08);
+        }
+
+        .dev-label {
+            color: var(--muted);
+            font-size: 11px;
+            margin-bottom: 6px;
+        }
+
+        .dev-name {
+            font-size: 17px;
+            font-weight: 800;
+        }
+
+        .dev-name span {
+            color: #f09abc;
+        }
+
+        .dev-handle {
+            color: var(--muted);
+            font-size: 12px;
+            margin-top: 6px;
+        }
+
+        .dev-button {
+            color: var(--cyan);
+            text-decoration: none;
+            padding: 12px 17px;
+            border-radius: 12px;
+            border: 1px solid rgba(0, 229, 255, 0.2);
+            background: rgba(0, 229, 255, 0.06);
+            font-size: 12px;
+            font-weight: 700;
+            transition: 0.2s ease;
+            white-space: nowrap;
+        }
+
+        .dev-button:hover {
+            background: rgba(0, 229, 255, 0.14);
+            transform: translateY(-2px);
+        }
+
+
+        footer {
+            border-top: 1px solid rgba(255, 255, 255, 0.07);
+            padding: 24px 0;
+            color: #777f93;
+            font-size: 11px;
+            text-align: center;
+            line-height: 1.8;
+        }
+
+        footer span {
+            color: var(--cyan);
+        }
+
+
+        @media (max-width: 800px) {
+            .hero {
+                grid-template-columns: 1fr;
+                gap: 25px;
+                padding: 65px 0 45px;
+            }
+
+            .hero-content {
+                text-align: center;
+            }
+
+            .eyebrow {
+                justify-content: center;
+            }
+
+            .description {
+                margin-left: auto;
+                margin-right: auto;
+            }
+
+            .buttons {
+                justify-content: center;
+            }
+
+            .visual {
+                min-height: 340px;
+                margin-top: 10px;
+            }
+
+            .mail-card {
+                max-width: 360px;
+            }
+
+            .floating-tag {
+                right: max(0px, calc((100% - 360px) / 2 - 15px));
+            }
+
+            .developer-card {
+                padding: 22px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                width: 89%;
+            }
+
+            nav {
+                padding: 20px 0;
+            }
+
+            .brand {
+                font-size: 12px;
+                gap: 8px;
+            }
+
+            .brand-icon {
+                width: 37px;
+                height: 37px;
+                font-size: 18px;
+            }
+
+            .status {
+                padding: 8px 10px;
+                font-size: 10px;
+            }
+
+            h1 {
+                font-size: 40px;
+                letter-spacing: -1.8px;
+            }
+
+            .description {
+                font-size: 13px;
+            }
+
+            .mail-card {
+                padding: 23px;
+            }
+
+            .developer-card {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .dev-button {
+                width: 100%;
+                text-align: center;
+            }
+
+            .floating-tag {
+                right: 0;
+                bottom: 12px;
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                scroll-behavior: auto !important;
+                transition-duration: 0.01ms !important;
+            }
+        }
+    </style>
 </head>
+
 <body>
-<div class="app-root">
-  <div class="decor decor-one"></div>
-  <div class="decor decor-two"></div>
-  <header class="nav">
-    <div class="brand"><span class="brand-mark">✦</span><span>glassy.</span></div>
-    <div class="nav-note">A little clarity in your day</div>
-  </header>
-  <main>
-    <section class="hero-copy">
-      <div class="eyebrow"><span class="spark"></span> A softer kind of workspace</div>
-      <h1>Less noise.<br><span>More focus.</span></h1>
-      <p class="lead">A calm little corner for your ideas, goals, and everyday progress. Light, airy, and wrapped in a touch of glass.</p>
-      <div class="actions">
-        <button class="primary" id="exploreBtn">Explore the concept ↗</button>
-        <button class="secondary" id="detailsBtn">What's inside?</button>
-      </div>
-      <div class="microcopy" id="microcopy">Designed to feel light, not empty.</div>
-    </section>
-    <section class="preview-wrap" aria-label="Glass dashboard preview">
-      <div class="float-chip top"><span class="chip-icon">✧</span> Your space, refreshed</div>
-      <div class="glass-card">
-        <div class="card-top">
-          <div class="card-title">Overview</div>
-          <div class="dots"><i></i><i></i><i></i></div>
+
+    <nav class="container">
+        <div class="brand">
+            <div class="brand-icon">✉</div>
+            <div>FAKE MAIL <span>BOT</span></div>
         </div>
-        <div class="profile">
-          <div class="avatar">✦</div>
-          <div><strong>Your personal space</strong><small>Everything in its place</small></div>
-          <div class="status">READY</div>
+
+        <div class="status">
+            <span class="status-dot"></span>
+            Telegram Bot
         </div>
-        <div class="stats">
-          <div class="stat"><div class="stat-label">Focus time</div><div class="stat-value">2.8h <span class="trend">↗ 12%</span></div></div>
-          <div class="stat"><div class="stat-label">Little wins</div><div class="stat-value">08 <span class="trend">today</span></div></div>
+    </nav>
+
+    <main class="container">
+
+        <section class="hero">
+
+            <div class="hero-content">
+
+                <div class="eyebrow">
+                    <span>✦</span>
+                    Smart Mail Experience
+                </div>
+
+                <h1>
+                    Fake Mail<br>
+                    Availability<br>
+                    <span class="highlight">Checker Bot.</span>
+                </h1>
+
+                <p class="description">
+                    A simple way to explore your fake-mail bot.
+                    Open Telegram, discover the channel, and get started
+                    with the bot in just one click.
+                </p>
+
+                <p class="powered">
+                    Powered by <strong>𝑬𝒓𝒆𝒃𝒖𝒔°</strong>
+                </p>
+
+                <div class="buttons">
+
+                    <a
+                        class="btn btn-secondary"
+                        href="https://t.me/linksfromerebus"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                    >
+                        <svg width="19" height="19" viewBox="0 0 24 24"
+                             fill="currentColor" aria-hidden="true">
+                            <path d="M21.8 3.2 18.6 20c-.2 1.2-.9 1.5-1.8.9l-5-3.7-2.4 2.3c-.3.3-.5.5-1 .5l.4-5.1 9.3-8.4c.4-.4-.1-.6-.6-.2L6 13.5l-4.9-1.6c-1.1-.3-1.1-1.1.2-1.6L20.4 3c.9-.3 1.7.2 1.4.2z"/>
+                        </svg>
+                        Channel
+                    </a>
+
+                    <a
+                        class="btn btn-primary"
+                        href="https://t.me/ErebusFakeMailcheckerBot"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                    >
+                        <svg width="19" height="19" viewBox="0 0 24 24"
+                             fill="currentColor" aria-hidden="true">
+                            <path d="M21.8 3.2 18.6 20c-.2 1.2-.9 1.5-1.8.9l-5-3.7-2.4 2.3c-.3.3-.5.5-1 .5l.4-5.1 9.3-8.4c.4-.4-.1-.6-.6-.2L6 13.5l-4.9-1.6c-1.1-.3-1.1-1.1.2-1.6L20.4 3c.9-.3 1.7.2 1.4.2z"/>
+                        </svg>
+                        Open Bot
+                    </a>
+
+                </div>
+
+            </div>
+
+            <div class="visual">
+
+                <div class="glow"></div>
+
+                <div class="mail-card">
+
+                    <div class="card-top">
+                        <div>
+                            <div class="card-label">WELCOME TO</div>
+                            <div class="card-title" style="margin-top: 7px;">
+                                Fake Mail Bot
+                            </div>
+                        </div>
+
+                        <div class="mail-symbol">📨</div>
+                    </div>
+
+                    <p class="card-subtitle">
+                        Your Telegram companion for fake-mail services.
+                    </p>
+
+                    <div class="divider"></div>
+
+                    <div class="feature">
+                        <div class="feature-icon">✉️</div>
+                        <div>Fake Mail Experience</div>
+                    </div>
+
+                    <div class="feature">
+                        <div class="feature-icon">⚡</div>
+                        <div>Simple Telegram Access</div>
+                    </div>
+
+                    <div class="feature">
+                        <div class="feature-icon">🔒</div>
+                        <div>Privacy-Conscious Design</div>
+                    </div>
+
+                </div>
+
+                <div class="floating-tag">
+                    <span>✦</span>
+                    Powered by 𝑬𝒓𝒆𝒃𝒖𝒔°
+                </div>
+
+            </div>
+
+        </section>
+
+        <section class="developer">
+
+            <div class="developer-card">
+
+                <div class="dev-left">
+
+                    <div class="avatar">👨‍💻</div>
+
+                    <div>
+                        <div class="dev-label">DESIGNED & DEVELOPED BY</div>
+
+                        <div class="dev-name">
+                            𝑯𝒂𝒛𝒆 <span>°</span>
+                        </div>
+
+                        <div class="dev-handle">@Noxmirage</div>
+                    </div>
+
+                </div>
+
+                <a
+                    class="dev-button"
+                    href="https://t.me/Noxmirage"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                >
+                    ↗ Contact Developer
+                </a>
+
+            </div>
+
+        </section>
+
+    </main>
+
+    <footer>
+        <div class="container">
+            Made with <span>♥</span> and a little bit of cyan magic.<br>
+            © <span id="year"></span> Fake Mail Availability Checker Bot.
         </div>
-        <div class="activity">
-          <div class="activity-head">Your rhythm <span>This week</span></div>
-          <div class="bars" aria-label="Decorative activity chart"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
-        </div>
-      </div>
-      <div class="float-chip bottom"><span class="chip-icon">✓</span> Small steps count</div>
-    </section>
-  </main>
-  <footer><span>GLASSY UI CONCEPT</span><span>Soft surfaces · Clear ideas</span></footer>
-</div>
-<script>
-const microcopy = document.getElementById('microcopy');
-document.getElementById('exploreBtn').addEventListener('click', () => {
-  microcopy.textContent = 'You’re exploring the concept — make it yours.';
-});
-document.getElementById('detailsBtn').addEventListener('click', () => {
-  microcopy.textContent = 'A dashboard card, tiny stats, activity bars, and frosted-glass details.';
-});
-</script>
+    </footer>
+
+    <script>
+        document.getElementById("year").textContent =
+            new Date().getFullYear();
+    </script>
+
 </body>
 </html>
+
