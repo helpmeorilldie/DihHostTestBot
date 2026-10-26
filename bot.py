@@ -9,7 +9,6 @@ from flask import Flask
 from threading import Thread
 try:from colorama import Fore,Style,init;init()
 except:os.system('pip install colorama');from colorama import Fore,Style,init
-from keep_alive import keep_alive
 
 keep_alive()
 
