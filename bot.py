@@ -10,9 +10,8 @@ from threading import Thread
 try:from colorama import Fore,Style,init;init()
 except:os.system('pip install colorama');from colorama import Fore,Style,init
 
-keep_alive()
 
-# Start your existing bot here
+
 
 app = Flask(__name__)
 
@@ -30,9 +29,9 @@ def run():
 def keep_alive():
     server = Thread(target=run, daemon=True)
     server.start()
+keep_alive()
 
-
-BOT_TOKEN= "8554922121:AAEAIH37S8N8or8VgZpFIq-BX3pEsbAHLa4"
+BOT_TOKEN = os.environ.get("BOT_TOKEN")
 API_URL=f"https://api.telegram.org/bot{BOT_TOKEN}"
 
 _l='Cʜᴀɴɴᴇʟ🪭'
