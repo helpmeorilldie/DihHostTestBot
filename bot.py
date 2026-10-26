@@ -5,8 +5,33 @@ import json
 import random 
 import requests
 import threading 
+from flask import Flask 
+from threading import Thread
 try:from colorama import Fore,Style,init;init()
 except:os.system('pip install colorama');from colorama import Fore,Style,init
+from keep_alive import keep_alive
+
+keep_alive()
+
+# Start your existing bot here
+
+app = Flask(__name__)
+
+@app.route("/")
+def home():
+    return "Bot is alive!", 200
+
+@app.route("/health")
+def health():
+    return "OK", 200
+
+def run():
+    app.run(host="0.0.0.0", port=10000)
+
+def keep_alive():
+    server = Thread(target=run, daemon=True)
+    server.start()
+
 
 BOT_TOKEN= "8554922121:AAEAIH37S8N8or8VgZpFIq-BX3pEsbAHLa4"
 API_URL=f"https://api.telegram.org/bot{BOT_TOKEN}"
