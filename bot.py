@@ -273,7 +273,7 @@ def process_single(chat_id,raw_input):
 	if not A:return
 	if _D in A:
 		H,E=A.split(_D,1)
-		if E not in SUPPORTED_DOMAINS:send_message(D,f"❌ <b>Iɴᴠᴀʟɪᴅ Dᴏᴍᴀɪɴ</b>\n\n<b>Pʟᴇᴀsᴇ Uꜱᴇ Oɴᴇ Oꜰ Tʜᴇ Sᴜᴘᴘᴏʀᴛᴇᴅ Dᴏᴍᴀɪɴs</b>\n<code>{', '.join(_D+A for A in SUPPORTED_DOMAINS)}</code>");return
+		if E not in SUPPORTED_DOMAINS:send_message(D,f"❌ <b>Iɴᴠᴀʟɪᴅ Dᴏᴍᴀɪɴ</b>\n\n<b>Pʟᴇᴀsᴇ Uꜱᴇ Oɴᴇ Oꜰ Tʜᴇ Sᴜᴘᴘᴏʀᴛᴇᴅ Dᴏᴍᴀɪɴs</b>\n<code>{", ".join(_D+A for A in SUPPORTED_DOMAINS)}</code>");return
 		B=f"{H}@{E}"
 	else:B=f"{A}@hi2.in"
 	F=threading.Event();I=animate_check(D,B,F);G=check_hi2_email(B);F.set()
