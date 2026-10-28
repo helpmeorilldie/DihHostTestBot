@@ -2,9 +2,12 @@ import os
 import sys
 import time
 import json
-import random 
+import random
+import sqlite3
 import requests
-import threading 
+import threading
+
+from datetime import datetime, timezone
 from flask import Flask, send_from_directory
 from threading import Thread
 try:from colorama import Fore,Style,init;init()
@@ -14,6 +17,89 @@ except:os.system('pip install colorama');from colorama import Fore,Style,init
 
 
 app = Flask(__name__)
+# ==============================
+# DATABASE CONFIGURATION
+# ==============================
+
+DATABASE_PATH = os.path.join(
+    os.path.dirname(os.path.abspath(__file__)),
+    "bot_database.sqlite3"
+)
+
+
+def get_db():
+    """Create a new SQLite connection."""
+    connection = sqlite3.connect(
+        DATABASE_PATH,
+        timeout=30
+    )
+
+    connection.row_factory = sqlite3.Row
+    connection.execute("PRAGMA busy_timeout = 30000")
+
+    return connection
+
+
+def init_database():
+    """Create the database tables if they don't exist."""
+
+    with get_db() as db:
+
+        # Store registered Telegram users.
+        db.execute("""
+            CREATE TABLE IF NOT EXISTS users (
+                user_id INTEGER PRIMARY KEY,
+                username TEXT,
+                first_name TEXT,
+                points INTEGER NOT NULL DEFAULT 0,
+                referred_by INTEGER,
+                joined_at TEXT NOT NULL,
+                last_seen TEXT NOT NULL,
+                start_count INTEGER NOT NULL DEFAULT 1,
+                command_count INTEGER NOT NULL DEFAULT 0,
+                is_blocked INTEGER NOT NULL DEFAULT 0,
+                FOREIGN KEY (referred_by)
+                    REFERENCES users(user_id)
+            )
+        """)
+
+        # Record point changes for future admin auditing.
+        db.execute("""
+            CREATE TABLE IF NOT EXISTS point_transactions (
+                transaction_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER NOT NULL,
+                amount INTEGER NOT NULL,
+                reason TEXT NOT NULL,
+                admin_id INTEGER,
+                created_at TEXT NOT NULL,
+                FOREIGN KEY (user_id)
+                    REFERENCES users(user_id)
+            )
+        """)
+
+        # Track successful referral rewards.
+        db.execute("""
+            CREATE TABLE IF NOT EXISTS referrals (
+                referral_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                referrer_id INTEGER NOT NULL,
+                referred_user_id INTEGER NOT NULL UNIQUE,
+                reward INTEGER NOT NULL DEFAULT 0,
+                created_at TEXT NOT NULL,
+                FOREIGN KEY (referrer_id)
+                    REFERENCES users(user_id),
+                FOREIGN KEY (referred_user_id)
+                    REFERENCES users(user_id)
+            )
+        """)
+
+    print("[DATABASE] Database initialized successfully.")
+
+
+def current_timestamp():
+    """Return the current UTC timestamp."""
+    return datetime.now(timezone.utc).isoformat()
+
+
 
 @app.route("/")
 def home():
@@ -352,5 +438,6 @@ print(f"""
     ╰──────────────────────────────╯
 {reset}""")
 
-
+init_database()
 run_bot()
+
