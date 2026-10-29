@@ -33,7 +33,7 @@ from cfonts import render
 # ---------------------------------------------------------------------
 MIN_FOLLOWERS = 20                     # Only accounts with >= this many followers
 
-expiry_date = datetime(2026, 9, 5, 23, 23, 23)
+expiry_date = datetime(2036, 9, 5, 23, 23, 23)
 current_date = datetime.now()
 
 if current_date > expiry_date:
