@@ -5,6 +5,8 @@ import json
 import random 
 import requests
 import threading 
+from flask import Flask, send_from_directory
+from threading import Thread
 try:from colorama import Fore,Style,init;init()
 except:os.system('pip install colorama');from colorama import Fore,Style,init
 
