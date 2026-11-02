@@ -374,7 +374,7 @@ except Exception:
 # ─────────────────────────── CONFIG — EDIT THESE ───────────────────────────
 OWNER_ID    = 6592441427          # your numeric Telegram id (admin)
 ADMIN_IDS   = []                                       # optional extra admin ids
-LOG_CHANNEL = os.getenv("LOG_CHANNEL", "0")            # e.g. -1001234567890  (bot must be admin there)
+LOG_CHANNEL = -1004331130989            # e.g. -1001234567890  (bot must be admin there)
 UPI_ID      = os.getenv("UPI_ID", "Ahmadammar@fam")    # same UPI as botV6
 UPI_NAME    = os.getenv("UPI_NAME", "Erebus Premium")
 DB_PATH     = os.getenv("DB_PATH", "erebus_checker.sqlite3")
