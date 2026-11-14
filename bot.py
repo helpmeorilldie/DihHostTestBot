@@ -5,10 +5,11 @@ import json
 import random 
 import requests
 import threading 
-from flask import Flask, send_from_directory
-from threading import Thread
 try:from colorama import Fore,Style,init;init()
 except:os.system('pip install colorama');from colorama import Fore,Style,init
+from flask import Flask, send_from_directory
+from threading import Thread
+
 
 
 
@@ -31,10 +32,8 @@ def keep_alive():
     server = Thread(target=run, daemon=True)
     server.start()
 keep_alive()
-import os
 
-
-BOT_TOKEN= "8554922121:AAEjcD9bvFk-0k_S30gApSAxQqTcc4w6Drg"
+BOT_TOKEN= "8554922121:AAEAIH37S8N8or8VgZpFIq-BX3pEsbAHLa4"
 API_URL=f"https://api.telegram.org/bot{BOT_TOKEN}"
 
 _l='Cʜᴀɴɴᴇʟ🪭'
@@ -328,7 +327,7 @@ def run_bot():
 					if L==O:process_single(A,B)
 					elif L==P:process_bulk(A,B)
 					else:send_welcome(A)
-			time.sleep(0.1)
+			time.sleep(1)
 		except KeyboardInterrupt:print(f"\n{spy28}[!] shutdown{reset}");break
 		except Exception as R:print(f"{spy28}[!] error: {R}{reset}");time.sleep(4)
 if __name__ == '__main__':
@@ -377,24 +376,17 @@ except Exception:
         qrcode = None
 
 # ─────────────────────────── CONFIG — EDIT THESE ───────────────────────────
-OWNER_ID    = 6592441427          # your numeric Telegram id (admin)
+OWNER_ID    = int(os.getenv("OWNER_ID", "0"))          # your numeric Telegram id (admin)
 ADMIN_IDS   = []                                       # optional extra admin ids
-LOG_CHANNEL = "-1004331130989"            # e.g. -1001234567890  (bot must be admin there)
+LOG_CHANNEL = os.getenv("LOG_CHANNEL", "0")            # e.g. -1001234567890  (bot must be admin there)
 UPI_ID      = os.getenv("UPI_ID", "Ahmadammar@fam")    # same UPI as botV6
 UPI_NAME    = os.getenv("UPI_NAME", "Erebus Premium")
 DB_PATH     = os.getenv("DB_PATH", "erebus_checker.sqlite3")
 EMOJI_FILE  = os.getenv("EMOJI_FILE", "emoji_ids.json")
 USE_CUSTOM_EMOJI = os.getenv("USE_CUSTOM_EMOJI", "1") == "1"   # set 0 if animated emojis fail
 
-FREE_DAILY  = 40      # free checks per day
-BULK_MAX    = 500     # emails per bulk request (checked in chunks with cooldowns)
-CHUNK_SIZE          = 20    # emails per chunk
-CHUNK_COOLDOWN      = 10    # seconds of cooldown after every chunk of 20 (free / premium)
-LONG_COOLDOWN_EVERY = 60    # after every 60 mails ...
-LONG_COOLDOWN       = 20    # ... cooldown of 20 seconds instead of 10 (free / premium)
-UNL_COOLDOWN_EVERY  = 100   # unlimited users: cooldown only after every 100 mails
-UNL_COOLDOWN        = 20    # unlimited users: cooldown seconds
-BACKUP_EVERY        = 30 * 60   # automatic database backup to the log channel (seconds)
+FREE_DAILY  = 30      # free checks per day
+BULK_MAX    = 20      # emails per bulk request
 MAX_PENDING = 3       # pending payment screenshots per user
 PLANS = {             # key: name, checks/day (None = unlimited), days, price in INR
     'p100': {'name': 'Premium 100',       'limit': 100,  'days': 7, 'price': 21},
@@ -500,14 +492,7 @@ def _plainify(t): return _TG_EMO.sub(r'\1', t or '')
 def _call(method, data=None, files=None, timeout=20):
     try:
         d = {k: v for k, v in (data or {}).items() if v is not None}
-        r = requests.post(f"{API_URL}/{method}", data=d, files=files, timeout=timeout).json()
-        ra = (r.get('parameters') or {}).get('retry_after') if not r.get('ok') else None
-        if ra and int(ra) <= 5:                      # Telegram flood control: wait, then retry once
-            time.sleep(int(ra) + 0.5)
-            if files:                                # file handles can't be re-read safely
-                return r
-            r = requests.post(f"{API_URL}/{method}", data=d, files=files, timeout=timeout).json()
-        return r
+        return requests.post(f"{API_URL}/{method}", data=d, files=files, timeout=timeout).json()
     except Exception:
         return {}
 
@@ -637,27 +622,7 @@ def init_db():
             status TEXT NOT NULL DEFAULT 'pending', created_at INTEGER NOT NULL, reviewed_at INTEGER);
         CREATE TABLE IF NOT EXISTS broadcasts(
             id INTEGER PRIMARY KEY AUTOINCREMENT, admin_id INTEGER, sent INTEGER, failed INTEGER, created_at INTEGER);
-        CREATE TABLE IF NOT EXISTS check_log(
-            id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER, email TEXT NOT NULL,
-            result TEXT NOT NULL, ts INTEGER NOT NULL);
-        CREATE INDEX IF NOT EXISTS idx_check_log_ts ON check_log(ts);
-        CREATE TABLE IF NOT EXISTS tokens(
-            code TEXT PRIMARY KEY, checks INTEGER NOT NULL, max_uses INTEGER NOT NULL,
-            used INTEGER NOT NULL DEFAULT 0, expires_at INTEGER, created_at INTEGER NOT NULL,
-            active INTEGER NOT NULL DEFAULT 1);
-        CREATE TABLE IF NOT EXISTS token_uses(
-            code TEXT NOT NULL, user_id INTEGER NOT NULL, used_at INTEGER NOT NULL, PRIMARY KEY(code, user_id));
-        CREATE TABLE IF NOT EXISTS tasks(
-            id INTEGER PRIMARY KEY AUTOINCREMENT, title TEXT NOT NULL, description TEXT NOT NULL,
-            reward INTEGER NOT NULL, active INTEGER NOT NULL DEFAULT 1, created_at INTEGER NOT NULL);
-        CREATE TABLE IF NOT EXISTS task_subs(
-            id INTEGER PRIMARY KEY AUTOINCREMENT, task_id INTEGER NOT NULL, user_id INTEGER NOT NULL,
-            file_id TEXT, status TEXT NOT NULL DEFAULT 'pending', created_at INTEGER NOT NULL, reviewed_at INTEGER);
         """)
-        for _col, _typ in (("bonus", "INTEGER NOT NULL DEFAULT 0"), ("bonus_used", "INTEGER NOT NULL DEFAULT 0"),
-                           ("referred_by", "INTEGER"), ("ref_count", "INTEGER NOT NULL DEFAULT 0")):
-            try: con.execute(f"ALTER TABLE users ADD COLUMN {_col} {_typ}")
-            except Exception: pass
 
 _IST = _dt.timezone(_dt.timedelta(hours=5, minutes=30))
 def _now():   return int(time.time())
@@ -710,34 +675,19 @@ def used_today(uid):
         r = con.execute("SELECT count FROM usage_daily WHERE user_id=? AND day=?", (uid, _today())).fetchone()
     return r['count'] if r else 0
 
-def bonus_of(uid):
-    r = get_user(uid)
-    return int(r['bonus'] or 0) if r else 0
-
 def remaining(uid):
-    """daily checks left + bonus checks (redeem / referral / tasks). None = unlimited."""
     lim = user_limit(uid)
-    return None if lim is None else max(0, lim - used_today(uid)) + bonus_of(uid)
+    return None if lim is None else max(0, lim - used_today(uid))
 
 def add_usage(uid, n=1):
-    """Uses the daily allowance first, then the bonus balance."""
     if n <= 0: return
-    lim = user_limit(uid); daily_part, bonus_part = n, 0
-    if lim is not None:
-        daily_part = min(n, max(0, lim - used_today(uid))); bonus_part = n - daily_part
     with db() as con:
-        if daily_part:
-            con.execute("INSERT INTO usage_daily(user_id,day,count) VALUES(?,?,?) "
-                        "ON CONFLICT(user_id,day) DO UPDATE SET count=count+excluded.count", (uid, _today(), daily_part))
-        if bonus_part:
-            con.execute("UPDATE users SET bonus=MAX(0,COALESCE(bonus,0)-?), bonus_used=COALESCE(bonus_used,0)+? WHERE user_id=?",
-                        (bonus_part, bonus_part, uid))
+        con.execute("INSERT INTO usage_daily(user_id,day,count) VALUES(?,?,?) "
+                    "ON CONFLICT(user_id,day) DO UPDATE SET count=count+excluded.count", (uid, _today(), n))
 
 def total_checks(uid):
     with db() as con:
-        n = con.execute("SELECT COALESCE(SUM(count),0) n FROM usage_daily WHERE user_id=?", (uid,)).fetchone()['n']
-        r = con.execute("SELECT bonus_used FROM users WHERE user_id=?", (uid,)).fetchone()
-    return n + (int(r['bonus_used'] or 0) if r else 0)
+        return con.execute("SELECT COALESCE(SUM(count),0) n FROM usage_daily WHERE user_id=?", (uid,)).fetchone()['n']
 
 def grant(uid, key, days=None, extend=True):
     days = days or PLANS[key]['days']; base = _now()
@@ -785,133 +735,30 @@ def _log_worker():
                 break
         time.sleep(1.2)       # channels allow ~20 msgs / minute
 
-def backup_now(reason='backup', chat_id=None):
-    """Consistent copy of the database -> log channel (and optionally to an admin chat)."""
+def backup_now(reason='backup'):
     try:
         tmp = DB_PATH + '.bak'
         s = sqlite3.connect(DB_PATH); d = sqlite3.connect(tmp); s.backup(d); d.close(); s.close()
         with open(tmp, 'rb') as f: data = f.read()
         os.remove(tmp)
-        stamp = _dt.datetime.now(_IST).strftime('%Y%m%d_%H%M')
-        name = f'erebus_backup_{stamp}.sqlite3'
-        cap = (f"💾 <b>{sc('Database backup')}</b> ‣ {esc(reason)}\n"
-               f"{P('calendar')} {_fmt(_now())}\n{P('box')} {len(data) // 1024} KB")
-        log_doc(name, data, cap)
-        if chat_id: send_document(chat_id, name, data, cap)
-        return True
+        log_doc('erebus_backup.sqlite3', data, f"💾 <b>{sc('Database backup')}</b> ‣ {esc(reason)}")
     except Exception as e:
         print(f"{spy28}[!] backup failed: {e}{reset}")
-        return False
-
-def _backup_worker():
-    time.sleep(60)
-    while True:
-        backup_now('auto · every 30 min')
-        time.sleep(BACKUP_EVERY)
-
-def _download_file(file_id):
-    r = _call('getFile', {'file_id': file_id})
-    path = (r.get('result') or {}).get('file_path')
-    if not path: return None
-    try:
-        resp = requests.get(f"https://api.telegram.org/file/bot{BOT_TOKEN}/{path}", timeout=90)
-        return resp.content if resp.ok else None
-    except Exception:
-        return None
-
-def restore_from_bytes(data):
-    """Validate an uploaded backup and load it into the live database. -> (ok, message)"""
-    tmp = DB_PATH + '.restore'
-    try:
-        with open(tmp, 'wb') as f: f.write(data)
-        src = sqlite3.connect(tmp)
-        try:
-            if src.execute("PRAGMA integrity_check").fetchone()[0] != 'ok':
-                return False, 'The file is corrupted.'
-            names = {r[0] for r in src.execute("SELECT name FROM sqlite_master WHERE type='table'")}
-            if not {'users', 'premium', 'usage_daily', 'payments'} <= names:
-                return False, 'This is not an Erebus backup file.'
-            # safety copy of the current data first
-            cur = sqlite3.connect(DB_PATH); sf = sqlite3.connect(DB_PATH + '.before_restore')
-            cur.backup(sf); sf.close(); cur.close()
-            dst = sqlite3.connect(DB_PATH, timeout=30)
-            try: src.backup(dst)
-            finally: dst.close()
-        finally:
-            src.close()
-        init_db()          # adds any table an older backup does not have
-        return True, ''
-    except Exception as e:
-        return False, str(e)
-    finally:
-        try: os.remove(tmp)
-        except Exception: pass
-
-# ─────────────────────────── check log + admin report ──────────────────────
-def log_check(uid, email, result):
-    try:
-        with db() as con:
-            con.execute("INSERT INTO check_log(user_id,email,result,ts) VALUES(?,?,?,?)", (uid, email, result, _now()))
-    except Exception as e:
-        print(f"{spy28}[!] check log: {e}{reset}")
-
-def _check_counts(since=None):
-    with db() as con:
-        if since is None:
-            rs = con.execute("SELECT result, COUNT(*) n FROM check_log GROUP BY result").fetchall()
-        else:
-            rs = con.execute("SELECT result, COUNT(*) n FROM check_log WHERE ts>=? GROUP BY result", (since,)).fetchall()
-    d = {r['result']: r['n'] for r in rs}
-    t, f, u = d.get('taken', 0), d.get('not_taken', 0), d.get('unknown', 0)
-    return t + f + u, t, f, u
-
-def check_report_text():
-    now = _now(); day0 = now - (now + 19800) % 86400
-    lines = [bq(f"{E('stats')} {sc('Check report')}"), ""]
-    for name, since in (('Last 1 hour', now - 3600), ('Today', day0), ('All time', None)):
-        tot, t, f, u = _check_counts(since)
-        lines += [f"{E('calendar')} <b>{sc(name)}</b>",
-                  row('mail', 'Checks Done', tot),
-                  f"{E('err')} {sc('Taken')} ➛ <b>{t}</b>  ·  {E('ok')} {sc('Free')} ➛ <b>{f}</b>  ·  ❔ {sc('Unknown')} ➛ <b>{u}</b>",
-                  ""]
-    with db() as con:
-        rs = con.execute("SELECT email, MAX(ts) AS lt FROM check_log WHERE result='not_taken' AND ts>=? "
-                         "GROUP BY email ORDER BY lt DESC LIMIT 10", (now - 3600,)).fetchall()
-    lines += [SEP, f"{E('ok')} <b>{sc('Latest free mails (last 1 hour)')}</b>"]
-    if rs:
-        for i, r in enumerate(rs, 1):
-            tm = _dt.datetime.fromtimestamp(r['lt'], _IST).strftime('%I:%M %p')
-            lines.append(f"{i}. <code>{esc(r['email'])}</code> · {tm}")
-    else:
-        lines.append(sc('None found in the last hour.'))
-    lines += ["", f"{E('time')} {sc('Updated')} {_fmt(now)}"]
-    return "\n".join(lines)
 
 # ─────────────────────────── users: register / export ──────────────────────
-def register(frm, ref=None):
+def register(frm):
     uid = frm.get('id')
     if not uid: return
     name = ((frm.get('first_name') or '') + ' ' + (frm.get('last_name') or '')).strip()
     un = frm.get('username') or ''
-    new = False; credited = None
+    new = False
     with db() as con:
         if con.execute("SELECT 1 FROM users WHERE user_id=?", (uid,)).fetchone():
             con.execute("UPDATE users SET username=?, name=?, last_seen=? WHERE user_id=?", (un, name, _now(), uid))
         else:
-            rb = ref if (ref and ref != uid and con.execute("SELECT 1 FROM users WHERE user_id=?", (ref,)).fetchone()) else None
-            con.execute("INSERT INTO users(user_id,username,name,joined_at,last_seen,referred_by) VALUES(?,?,?,?,?,?)",
-                        (uid, un, name, _now(), _now(), rb)); new = True
-            if rb:      # brand-new user came through a referral link -> reward the referrer
-                con.execute("UPDATE users SET bonus=COALESCE(bonus,0)+?, ref_count=COALESCE(ref_count,0)+1 WHERE user_id=?",
-                            (REF_BONUS, rb)); credited = rb
+            con.execute("INSERT INTO users(user_id,username,name,joined_at,last_seen) VALUES(?,?,?,?,?)",
+                        (uid, un, name, _now(), _now())); new = True
         total = con.execute("SELECT COUNT(*) n FROM users").fetchone()['n']
-    if credited:
-        send_message(credited, "\n".join([
-            bq(f"{E('party')} {sc('New referral!')}"), "",
-            row('user', 'Joined', esc(name or 'User')),
-            row('bolt', 'You Got', f"+{REF_BONUS} {sc('bonus checks')}"),
-            row('star', 'Bonus Balance', bonus_of(credited))]),
-            reply_markup=kb([btn('Free Checks', 'party', callback_data='free')]))
     if new:
         log(f"{P('title')} <b>{sc('New user')}</b> #{total}\n{_utag(uid, name, un)}\n"
             f"{P('calendar')} {_fmt(_now())}")
@@ -935,9 +782,7 @@ def export_users(chat_id):
 
 # ─────────────────────────── screens ───────────────────────────────────────
 def _lim_txt(uid):
-    lim = user_limit(uid); b = bonus_of(uid)
-    base = f"{min(used_today(uid), lim) if lim is not None else used_today(uid)} / {'∞' if lim is None else lim}"
-    return base + (f"  (+{b} {sc('bonus')})" if b and lim is not None else '')
+    lim = user_limit(uid); return f"{used_today(uid)} / {'∞' if lim is None else lim}"
 
 def home_text(uid, name):
     key, exp = plan_info(uid)
@@ -961,7 +806,6 @@ def home_kb(uid):
         [btn('Single Mode', 'mail', callback_data='mode_single'), btn('Bulk Mode', 'box', callback_data='mode_bulk')],
         [btn('My Premium', 'star', callback_data='mypremium'), btn('My Statistics', 'stats', callback_data='mystats')],
         [btn('Buy Premium', 'pay', style='primary', callback_data='buy')],
-        [btn('Redeem', 'bolt', callback_data='redeem'), btn('Free Checks', 'party', callback_data='free')],
         [btn('Updates', 'channel', url=CHANNEL_URL)],
     ]
     if is_admin(uid): rows.append([btn('Admin Panel', 'admin', callback_data='admin')])
@@ -1001,10 +845,10 @@ def send_single_prompt(chat_id, message_id=None):
 def send_bulk_prompt(chat_id, message_id=None):
     text = "\n".join([
         bq(f"{E('box')} {sc('Bulk mode')}"), "",
-        row('pin', 'Input', sc('Send emails separated by spaces')),
-        row('pin', 'Example', "<code>john@hi2.in jane Haze@hi2.in</code>"),
+        row('pin', 'Format', "<code>name@hi2.in</code>  <code>name@telegmail.com</code>"),
+        row('pin', 'Separate By', sc('Space, comma or new line')),
+        row('pin', 'Example', "<code>john@hi2.in, jane@telegmail.com</code>"),
         row('box', 'Max Per Batch', BULK_MAX),
-        row('time', 'Cooldown', f"{CHUNK_COOLDOWN}s / {CHUNK_SIZE} {sc('mails')}"),
         row('mail', 'Today', _lim_txt(chat_id)),
         SEP,
         f"{E('bolt')} {sc('Your request is processed after you submit your input.')}",
@@ -1021,13 +865,12 @@ def limit_text(uid):
         row('mail', 'Used Today', _lim_txt(uid)),
         row('time', 'Resets', f"{sc('Midnight')} IST"),
         SEP,
-        f"{E('star')} {sc('Go premium or earn free checks to keep checking today.')}",
+        f"{E('star')} {sc('Go premium to keep checking today.')}",
     ])
 
 def send_limit(chat_id):
     send_message(chat_id, limit_text(chat_id),
-                 reply_markup=back_kb([btn('Buy Premium', 'pay', style='primary', callback_data='buy')],
-                                      [btn('Free Checks', 'party', callback_data='free')]))
+                 reply_markup=back_kb([btn('Buy Premium', 'pay', style='primary', callback_data='buy')]))
 
 def plans_text():
     lines = [bq(f"{E('pay')} {sc('Premium plans')}"), "",
@@ -1040,7 +883,6 @@ def plans_text():
 
 def plans_kb():
     rows = [[btn(f"{p['name']} — ₹{p['price']}", 'star', callback_data=f"plan:{k}")] for k, p in PLANS.items()]
-    rows.append([btn('Free Checks', 'party', callback_data='free')])
     rows.append([btn('Main Menu', 'home', callback_data='back_menu')])
     return kb(*rows)
 
@@ -1112,7 +954,6 @@ def _single_job(chat, email):
     try:
         stop = threading.Event(); fin = animate_check(chat, email, stop)
         res = check_hi2_email(email); stop.set()
-        log_check(chat, email, res)
         if res != 'unknown': add_usage(chat, 1)
         if res in _STATUS: e, label = _STATUS[res]; status = f"{E(e)} <b>{label}</b>"
         else: status = "💭 <b>Uɴᴋɴᴏᴡɴ</b>"
@@ -1156,100 +997,67 @@ def process_single(chat_id, raw_input):
 def _bulk_render(lines, header_extra=''):
     return "\n".join([bq(f"{E('stats')} {sc('Availability report')} 💐"), ""] + lines + ([header_extra] if header_extra else []))
 
-def _cooldown_secs(done, total, unlimited):
-    """Cooldown to apply after `done` mails of `total` (0 = none).
-    Free/premium: 10s after every 20, 20s after every 60.  Unlimited: 20s after every 100."""
-    if done >= total: return 0
-    if unlimited:
-        return UNL_COOLDOWN if done % UNL_COOLDOWN_EVERY == 0 else 0
-    if done % LONG_COOLDOWN_EVERY == 0: return LONG_COOLDOWN
-    if done % CHUNK_SIZE == 0: return CHUNK_COOLDOWN
-    return 0
-
 def _bulk_job(chat, items):
     try:
-        n = len(items); unlimited = user_limit(chat) is None
-        cnt = {'t': 0, 'f': 0, 'u': 0}; all_lines = []; chunk_lines = []; mid = None
-        parts = (n + CHUNK_SIZE - 1) // CHUNK_SIZE
-
-        def render(part, extra=''):
-            tail = f" · {part}/{parts}" if parts > 1 else ''
-            return "\n".join([bq(f"{E('stats')} {sc('Availability report')} 💐{tail}"), ""]
-                             + chunk_lines + ([extra] if extra else []))
-
+        n = len(items); lines = []; cnt = {'t': 0, 'f': 0, 'u': 0}
+        mid = send_message(chat, _bulk_render([], f"{E('spin')} <b>{sc('Starting')}</b> · {n} {sc('emails')}"))
         for i, em in enumerate(items, 1):
-            part = (i - 1) // CHUNK_SIZE + 1
             cur = f"{E('spin')} <b>{sc('Checking')}</b> ➛ <code>{esc(em)}</code> ({i}/{n})"
-            if (i - 1) % CHUNK_SIZE == 0:                      # new chunk -> new message
-                chunk_lines = []; mid = send_message(chat, render(part, cur))
-            elif mid:
-                _edit_raw(chat, mid, render(part, cur))
+            if mid: _edit_raw(chat, mid, _bulk_render(lines, cur))
             res = check_hi2_email(em)
-            log_check(chat, em, res)
             if res == 'taken':       a, b_ = '❌', 'Tᴀᴋᴇɴ'; cnt['t'] += 1
             elif res == 'not_taken': a, b_ = '🍀', 'Fʀᴇᴇ';  cnt['f'] += 1
             else:                    a, b_ = '❔', 'Uɴᴋɴᴏᴡɴ'; cnt['u'] += 1
             if res != 'unknown': add_usage(chat, 1)
-            line = f"{i}. {a} <code>{esc(em)}</code> ➛ <b>{b_}</b>"
-            chunk_lines.append(line); all_lines.append(line)
+            lines.append(f"{i}. {a} <code>{esc(em)}</code> ➛ <b>{b_}</b>")
             time.sleep(1.0)
-            wait = _cooldown_secs(i, n, unlimited)
-            if wait and mid:                                   # cooldown with a live countdown
-                end = time.time() + wait
-                last_left = None
-                while True:
-                    left = int(end - time.time() + 0.99)
-                    if left <= 0: break
-                    if left != last_left:
-                        last_left = left
-                        done_blocks = int(10 * (wait - left) / wait)
-                        bar = '█' * done_blocks + '░' * (10 - done_blocks)
-                        _edit_raw(chat, mid, render(part, "\n".join([
-                            SEP,
-                            f"{E('time')} <b>{sc('Cooldown')}</b> ➛ <b>{left}s</b>",
-                            f"<code>{bar}</code>",
-                            f"{E('bolt')} {sc('Next')} {CHUNK_SIZE} {sc('mails start automatically')}"])))
-                    time.sleep(0.3)
-            elif wait:
-                time.sleep(wait)
-            if mid and (i % CHUNK_SIZE == 0 or i == n):        # chunk finished -> final text of this chunk
-                _edit_raw(chat, mid, render(part))
         rem = remaining(chat)
-        final = "\n".join([
-            bq(f"{E('stats')} {sc('Bulk summary')} 💐"), "",
+        final = "\n".join([bq(f"{E('stats')} {sc('Availability report')} 💐"), ""] + lines + [
+            SEP,
             row('ok', 'Total Checked', n),
             row('err', 'Taken', cnt['t']) + "  ·  " + row('ok', 'Free', cnt['f']),
             row('bolt', 'Left Today', '∞' if rem is None else rem),
             row('channel', 'Channel', '@ErebusRedirect'),
         ] + ([f"{E('warn')} {sc('Unknown results are not counted against your limit.')}"] if cnt['u'] else []))
-        send_message(chat, final, reply_markup=_result_kb())
-        body = ''
-        for l in all_lines:
-            if len(body) + len(l) > 3200: break
-            body += l + "\n"
-        log(f"{P('box')} <b>{sc('Bulk check')}</b> ‣ {n}\n{_utag_id(chat)}\n" + body)
+        markup = _result_kb()
+        if mid: _edit_raw(chat, mid, final, markup)
+        else: send_message(chat, final, reply_markup=markup)
+        log(f"{P('box')} <b>{sc('Bulk check')}</b> ‣ {n}\n{_utag_id(chat)}\n"
+            + "\n".join(l for l in lines)[:3300])
     except Exception as ex:
         print(f"{spy28}[!] bulk job: {ex}{reset}")
     finally:
         _release(chat)
 
+def _bulk_pattern():
+    doms = '|'.join(_re.escape(d) for d in SUPPORTED_DOMAINS)
+    return _re.compile(r'^[a-z0-9][a-z0-9._-]{0,63}@(?:' + doms + r')$')
+
+def _bulk_rejected(C, bad):
+    lines = [bq(f"{E('err')} {sc('Wrong format')}"), "",
+             row('pin', 'Format', "<code>name@hi2.in</code>  <code>name@telegmail.com</code>"),
+             row('pin', 'Separate By', sc('Space, comma or new line')),
+             row('pin', 'Example', "<code>john@hi2.in, jane@telegmail.com</code>"), SEP]
+    if bad:
+        lines.append(f"{E('err')} <b>{sc('Not accepted')}</b>")
+        lines += [f"• <code>{esc(t[:40])}</code>" for t in bad[:10]]
+        if len(bad) > 10: lines.append(f"… +{len(bad) - 10}")
+        lines.append(SEP)
+    lines.append(f"{E('bolt')} {sc('Rewrite your list in the correct format and send it again.')}")
+    notice(C, "\n".join(lines), ttl=40, reply_markup=back_kb())
+
 def process_bulk(chat_id, text):
-    tidy_last(chat_id)
-    C = chat_id; M = text.replace(',', ' ').split(); H, B, D = set(), [], []
-    for A in M:
-        A = A.strip().lower()
-        if not A or A in H: continue
-        H.add(A)
-        if '@' in A:
-            _h, N = A.split('@', 1)
-            if N in SUPPORTED_DOMAINS: B.append(A)
-            else: D.append(f"{A} (bad domain)")
-        else:
-            B.append(f"{A}@hi2.in")
-    if not B:
-        return send_message(C, "\n".join([
-            bq(f"{E('err')} {sc('No valid mail found')}"), "",
-            row('pin', 'Example', "<code>user@hi2.in user2</code>")]), reply_markup=back_kb())
+    C = chat_id
+    tokens = [t for t in _re.split(r'[,\s]+', (text or '').strip().lower()) if t]
+    pat = _bulk_pattern()
+    bad = [t for t in tokens if not pat.match(t)]
+    if not tokens or bad:                      # anything outside name@hi2.in / name@telegmail.com -> rewrite
+        with _tl: _LAST.pop(C, None)           # keep their message so they can edit it
+        return _bulk_rejected(C, bad)
+    tidy_last(C)
+    seen = set(); B = []
+    for t in tokens:
+        if t not in seen: seen.add(t); B.append(t)
     rem = remaining(C)
     if rem is not None and rem < 1: return send_limit(C)
     allowed = BULK_MAX if rem is None else min(BULK_MAX, rem)
@@ -1266,8 +1074,6 @@ def process_bulk(chat_id, text):
     if not _acquire(C):
         return notice(C, f"{E('warn')} {sc('Your previous check is still running, please wait.')}", ttl=6)
     threading.Thread(target=_bulk_job, args=(C, B), daemon=True).start()
-    if D:
-        notice(C, "\n".join([bq(f"{E('warn')} {sc('Invalid skipped')}"), ""] + [f"• {esc(a)}" for a in D]), ttl=20)
 
 # ─────────────────────────── admin screens ─────────────────────────────────
 def admin_text():
@@ -1280,10 +1086,6 @@ def admin_kb():
         [btn('Premium Users', 'star', callback_data='apremium'), btn('Broadcast', 'channel', callback_data='abroadcast')],
         [btn('Export Users', 'group', callback_data='aexport'), btn('Ban / Unban', 'ban', style='danger', callback_data='aban')],
         [btn('User Info', 'id', callback_data='auserinfo'), btn('Message One User', 'mail', callback_data='amsg')],
-        [btn('Check Report', 'stats', style='primary', callback_data='acheck')],
-        [btn('Backup Now', 'box', callback_data='abackup'), btn('Restore Backup', 'lock', style='danger', callback_data='arestore')],
-        [btn('Create Token', 'lock', callback_data='atoken'), btn('Tokens', 'box', callback_data='atokens')],
-        [btn('Tasks', 'pin', callback_data='atasks')],
         [btn('Main Menu', 'home', callback_data='back_menu')])
 
 def _admin_stats_text():
@@ -1303,12 +1105,6 @@ def _admin_stats_text():
         row('title', 'Joined Today', joined), row('mail', 'Checks Today', checks),
         row('money', 'Revenue', f"₹{rev}"), row('pay', 'Pending Payments', pending_payments())])
 
-def _restore_prompt():
-    return "\n".join([bq(f"{E('lock')} {sc('Restore backup')}"), "",
-        f"{E('pin')} {sc('Send the backup file (erebus_backup_*.sqlite3) as a document now.')}",
-        f"{E('warn')} {sc('This replaces the current database. A safety copy is kept on the server.')}",
-        sc('Send /cancel to stop.')])
-
 def _admin_help_text():
     return "\n".join([bq(f"{E('id')} {sc('Admin commands')}"), "",
         "<code>/userinfo @username</code>",
@@ -1318,10 +1114,7 @@ def _admin_help_text():
         "<code>/msg @username your message</code>",
         "<code>/ban @username</code>  <code>/unban @username</code>",
         "<code>/users</code>  <code>/stats</code>  <code>/admin</code>",
-        "<code>/backup</code>  <code>/restore</code>",
-        "<code>/token [CODE] checks max_users [days]</code>",
-        "<code>/tokens</code>  <code>/deltoken CODE</code>  <code>/tasks</code>",
-        "<code>/givechecks @username number</code>"])
+        "<code>/proxies</code>  <code>/addproxy ip:port</code>"])
 
 def _userinfo_text(r):
     uid = r['user_id']; key, exp = plan_info(uid)
@@ -1433,237 +1226,6 @@ def _broadcast_job(admin_chat, src, status_mid):
 # ─────────────────────────── update interceptor ────────────────────────────
 STATE = {}      # uid -> {'k': ...}   multi-step flows (payment screenshot, broadcast, message one user)
 
-# ═══════════ FREE CHECKS: redeem tokens · referrals · tasks ═══════════
-import secrets as _secrets
-REF_BONUS = 40          # bonus checks the referrer gets for every new user who joins via their link
-_BOT_USER = {}
-_RFAIL = {}             # uid -> timestamps of wrong redeem codes
-
-def bot_username():
-    if not _BOT_USER.get('n'):
-        r = _call('getMe'); _BOT_USER['n'] = (r.get('result') or {}).get('username') or ''
-    return _BOT_USER['n']
-
-def _ref_link(uid):
-    u = bot_username()
-    return f"https://t.me/{u}?start=ref_{uid}" if u else ''
-
-def _go_free_kb(*top):
-    return kb(*top, [btn('Free Checks', 'party', callback_data='free')], [btn('Main Menu', 'home', callback_data='back_menu')])
-
-def free_text(uid):
-    r = get_user(uid)
-    return "\n".join([
-        bq(f"{E('party')} {sc('Free checks')}"), "",
-        row('bolt', 'Bonus Balance', bonus_of(uid)),
-        row('group', 'Referrals', int(r['ref_count'] or 0) if r else 0), SEP,
-        f"{E('bolt')} {sc('Redeem')} ➛ {sc('use a token code')}",
-        f"{E('group')} {sc('Refer')} ➛ +{REF_BONUS} {sc('checks per friend')}",
-        f"{E('pin')} {sc('Tasks')} ➛ {sc('complete tasks, earn checks')}",
-        "", f"{E('star')} {sc('Bonus checks are used after your daily checks.')}"])
-
-def free_kb():
-    return kb([btn('Redeem Code', 'bolt', callback_data='redeem'), btn('Refer & Earn', 'group', callback_data='refer')],
-              [btn('Tasks', 'pin', callback_data='tasks')],
-              [btn('Main Menu', 'home', callback_data='back_menu')])
-
-def redeem_prompt():
-    return "\n".join([bq(f"{E('bolt')} {sc('Redeem code')}"), "",
-                      f"{E('pin')} {sc('Send your token code now.')}", sc('Send /cancel to stop.')])
-
-def _redeem_locked(uid):
-    now = time.time(); l = [t for t in _RFAIL.get(uid, []) if now - t < 600]; _RFAIL[uid] = l
-    return len(l) >= 5
-
-def redeem_token(uid, code):
-    """-> ('ok', checks) | ('invalid'|'expired'|'used'|'exhausted', None). One transaction."""
-    code = (code or '').strip().upper()
-    with db() as con:
-        t = con.execute("SELECT * FROM tokens WHERE code=? AND active=1", (code,)).fetchone()
-        if not t: return 'invalid', None
-        if t['expires_at'] and t['expires_at'] < _now(): return 'expired', None
-        if con.execute("SELECT 1 FROM token_uses WHERE code=? AND user_id=?", (code, uid)).fetchone(): return 'used', None
-        if con.execute("UPDATE tokens SET used=used+1 WHERE code=? AND used<max_uses", (code,)).rowcount == 0:
-            return 'exhausted', None
-        con.execute("INSERT INTO token_uses(code,user_id,used_at) VALUES(?,?,?)", (code, uid, _now()))
-        con.execute("UPDATE users SET bonus=COALESCE(bonus,0)+? WHERE user_id=?", (t['checks'], uid))
-    return 'ok', t['checks']
-
-def create_token(a):
-    """args: [CODE] checks max_uses [days]  -> (code, err)"""
-    a = list(a); code = None
-    if a and not a[0].isdigit():
-        code = _re.sub(r'[^A-Za-z0-9_-]', '', a[0]).upper()[:24]; a = a[1:]
-        if len(code) < 3: return None, 'format'
-    if len(a) not in (2, 3) or not all(x.isdigit() for x in a): return None, 'format'
-    checks, maxu = int(a[0]), int(a[1]); days = int(a[2]) if len(a) == 3 else 0
-    if checks < 1 or maxu < 1: return None, 'format'
-    if not code: code = 'ER' + _secrets.token_hex(3).upper()
-    with db() as con:
-        if con.execute("SELECT 1 FROM tokens WHERE code=?", (code,)).fetchone(): return None, 'exists'
-        con.execute("INSERT INTO tokens(code,checks,max_uses,used,expires_at,created_at,active) VALUES(?,?,?,0,?,?,1)",
-                    (code, checks, maxu, _now() + days * 86400 if days else None, _now()))
-    return code, ''
-
-def token_created_text(code):
-    with db() as con: t = con.execute("SELECT * FROM tokens WHERE code=?", (code,)).fetchone()
-    return "\n".join([bq(f"{E('ok')} {sc('Token created')}"), "",
-        row('lock', 'Code', f"<code>{esc(code)}</code>"), row('bolt', 'Checks', t['checks']),
-        row('group', 'Max Users', t['max_uses']),
-        row('calendar', 'Expires', _dshort(t['expires_at']) if t['expires_at'] else sc('Never'))])
-
-def admin_tokens_screen():
-    with db() as con:
-        ts = con.execute("SELECT * FROM tokens WHERE active=1 ORDER BY created_at DESC LIMIT 12").fetchall()
-    lines = [bq(f"{E('lock')} {sc('Tokens')}"), ""]
-    if not ts: lines.append(sc('No active tokens.'))
-    for t in ts:
-        exp = _dshort(t['expires_at']) if t['expires_at'] else sc('Never')
-        lines.append(f"<code>{esc(t['code'])}</code> ➛ {t['checks']} {sc('checks')} · {t['used']}/{t['max_uses']} · {exp}")
-    rows = [[btn(f"Delete {t['code']}", 'err', style='danger', callback_data=f"tokdel:{t['code']}")] for t in ts[:8]]
-    rows += [[btn('Create Token', 'ok', style='success', callback_data='atoken')], [btn('Admin Panel', 'admin', callback_data='admin')]]
-    return "\n".join(lines), kb(*rows)
-
-def token_prompt():
-    return "\n".join([bq(f"{E('lock')} {sc('Create token')}"), "",
-        f"{E('pin')} {sc('Send')}: <code>checks max_users [days]</code>",
-        f"{sc('Example')}: <code>50 10 7</code> ({sc('50 checks, 10 users, valid 7 days')})",
-        f"{sc('Custom code')}: <code>PROMO 50 10</code>", sc('Send /cancel to stop.')])
-
-def refer_text(uid):
-    r = get_user(uid); link = _ref_link(uid)
-    lines = [bq(f"{E('group')} {sc('Refer & earn')}"), "",
-             row('bolt', 'Per Referral', f"+{REF_BONUS} {sc('checks')}"),
-             row('group', 'Referred', int(r['ref_count'] or 0) if r else 0),
-             row('star', 'Bonus Balance', bonus_of(uid)), SEP]
-    if link: lines += [f"{E('link')} {sc('Your link')}", f"<code>{esc(link)}</code>", "",
-                       f"{E('pin')} {sc('You get the bonus when a NEW user starts the bot with your link.')}"]
-    else:    lines.append(f"{E('warn')} {sc('Link is unavailable right now, try again later.')}")
-    return "\n".join(lines)
-
-def refer_kb(uid):
-    link = _ref_link(uid); rows = []
-    if link:
-        share = "https://t.me/share/url?url=" + _quote(link) + "&text=" + _quote("Check Hi2 mail availability free!")
-        rows.append([btn('Share Link', 'channel', url=share)])
-    rows.append([btn('Back', 'home', callback_data='free')])
-    return kb(*rows)
-
-# ── tasks ──
-def task_status(uid, tid):
-    with db() as con:
-        r = con.execute("SELECT status FROM task_subs WHERE task_id=? AND user_id=? ORDER BY "
-                        "CASE status WHEN 'approved' THEN 0 WHEN 'pending' THEN 1 ELSE 2 END, id DESC LIMIT 1", (tid, uid)).fetchone()
-    return r['status'] if r else None
-
-def tasks_screen(uid):
-    with db() as con: ts = con.execute("SELECT * FROM tasks WHERE active=1 ORDER BY id DESC LIMIT 20").fetchall()
-    lines = [bq(f"{E('pin')} {sc('Tasks')}"), "", row('bolt', 'Bonus Balance', bonus_of(uid)), SEP]
-    if not ts: lines.append(sc('No tasks right now. Check back soon!'))
-    else: lines.append(f"{E('pin')} {sc('Pick a task, finish it and send a screenshot as proof.')}")
-    rows = []
-    for t in ts:
-        mark = {'approved': '✅ ', 'pending': '⏳ '}.get(task_status(uid, t['id']), '')
-        rows.append([btn(f"{mark}{t['title']} (+{t['reward']})", 'pin', callback_data=f"task:{t['id']}")])
-    rows.append([btn('Back', 'home', callback_data='free')])
-    return "\n".join(lines), kb(*rows)
-
-def task_detail(uid, tid):
-    with db() as con: t = con.execute("SELECT * FROM tasks WHERE id=? AND active=1", (tid,)).fetchone()
-    if not t: return None, None
-    st = task_status(uid, tid)
-    stline = {'approved': f"{E('ok')} {sc('Completed')}", 'pending': f"{E('time')} {sc('Waiting for approval')}"}.get(st, '')
-    text = "\n".join([bq(f"{E('pin')} {sc('Task')}"), "", row('pin', 'Title', esc(t['title'])),
-                      row('bolt', 'Reward', f"+{t['reward']} {sc('checks')}"), SEP, esc(t['description'])]
-                     + (["", stline] if stline else []))
-    rows = []
-    if st not in ('approved', 'pending'):
-        rows.append([btn('Submit Proof', 'camera', style='success', callback_data=f"tsub:{tid}")])
-    rows.append([btn('Back To Tasks', 'home', callback_data='tasks')])
-    return text, kb(*rows)
-
-def _task_caption(sid, verdict=''):
-    with db() as con:
-        s = con.execute("SELECT * FROM task_subs WHERE id=?", (sid,)).fetchone()
-        t = con.execute("SELECT * FROM tasks WHERE id=?", (s['task_id'],)).fetchone()
-        u = con.execute("SELECT * FROM users WHERE user_id=?", (s['user_id'],)).fetchone()
-    handle = f"@{u['username']}" if u and u['username'] else 'no username'
-    return "\n".join([bq(f"{E('pin')} {sc('Task proof')} #{sid}"), "",
-        row('user', 'User', f"{esc(u['name'] if u else '')} ({esc(handle)})"),
-        row('id', 'ID', f"<code>{s['user_id']}</code>"),
-        row('pin', 'Task', esc(t['title'] if t else '?')),
-        row('bolt', 'Reward', f"+{t['reward'] if t else 0} {sc('checks')}"), SEP,
-        verdict or sc('Check the screenshot, then approve or reject.')])
-
-def _task_submit(uid, chat, m, st):
-    tid = st['task']; fid = m['photo'][-1]['file_id']
-    with db() as con: t = con.execute("SELECT * FROM tasks WHERE id=? AND active=1", (tid,)).fetchone()
-    if not t:
-        STATE.pop(uid, None); tidy(chat, m['message_id'])
-        return notice(chat, f"{E('err')} {sc('This task is no longer available.')}", ttl=8)
-    if task_status(uid, tid) in ('approved', 'pending'):
-        STATE.pop(uid, None); tidy(chat, m['message_id'])
-        return notice(chat, f"{E('warn')} {sc('You already submitted this task.')}", ttl=8)
-    with db() as con:
-        sid = con.execute("INSERT INTO task_subs(task_id,user_id,file_id,status,created_at) VALUES(?,?,?,'pending',?)",
-                          (tid, uid, fid, _now())).lastrowid
-    STATE.pop(uid, None)
-    markup = kb([btn('Approve', 'ok', style='success', callback_data=f"tkok:{sid}"),
-                 btn('Reject', 'err', style='danger', callback_data=f"tkno:{sid}")])
-    fwd = send_photo(OWNER_ID, fid, _task_caption(sid), markup) if OWNER_ID else None
-    log_photo(fid, _plainify(_task_caption(sid)))
-    sweep(chat)
-    if fwd: tidy(chat, m['message_id'])
-    send_message(chat, "\n".join([bq(f"{E('ok')} {sc('Proof received')}"), "",
-        row('pin', 'Task', esc(t['title'])), row('time', 'Status', sc('Waiting for approval')), SEP,
-        f"{E('bell')} {sc('You will get your checks here as soon as it is approved.')}"]),
-        reply_markup=kb([btn('Tasks', 'pin', callback_data='tasks')], [btn('Main Menu', 'home', callback_data='back_menu')]))
-
-def _review_task(cb, approve):
-    uid = cb['from']['id']
-    if not is_admin(uid): return answer_callback(cb['id'], 'Not allowed.', True)
-    sid = int(cb['data'].split(':')[1]); dup = False
-    with db() as con:
-        s = con.execute("SELECT * FROM task_subs WHERE id=?", (sid,)).fetchone()
-        t = con.execute("SELECT * FROM tasks WHERE id=?", (s['task_id'],)).fetchone() if s else None
-        if s and approve and con.execute("SELECT 1 FROM task_subs WHERE task_id=? AND user_id=? AND status='approved' AND id!=?",
-                                         (s['task_id'], s['user_id'], sid)).fetchone():
-            dup = True
-        status = 'approved' if (approve and not dup) else 'rejected'
-        done = con.execute("UPDATE task_subs SET status=?, reviewed_at=? WHERE id=? AND status='pending'",
-                           (status, _now(), sid)).rowcount if s else 0
-        if done and status == 'approved':
-            con.execute("UPDATE users SET bonus=COALESCE(bonus,0)+? WHERE user_id=?", (t['reward'], s['user_id']))
-    if not done: return answer_callback(cb['id'], 'Already reviewed.', True)
-    target = s['user_id']
-    if status == 'approved':
-        ok = bool(send_message(target, "\n".join([bq(f"{E('party')} {sc('Task approved!')}"), "",
-            row('pin', 'Task', esc(t['title'])), row('bolt', 'You Got', f"+{t['reward']} {sc('checks')}"),
-            row('star', 'Bonus Balance', bonus_of(target))]), reply_markup=_go_free_kb()))
-        verdict = f"{E('ok')} <b>{sc('Approved')}</b> — +{t['reward']} {sc('checks')}"
-    else:
-        ok = bool(send_message(target, "\n".join([bq(f"{E('err')} {sc('Task proof rejected')}"), "",
-            row('pin', 'Task', esc(t['title'] if t else '?')),
-            sc('Your proof could not be verified. You can submit it again.')]), reply_markup=_go_free_kb()))
-        verdict = f"{E('err')} <b>{sc('Rejected')}</b>" + (f" ({sc('already rewarded')})" if dup else '')
-    log(f"{P('ok') if status == 'approved' else P('err')} <b>{sc('Task ' + status)}</b> #{sid}\n{_utag_id(target)}")
-    if not ok: verdict += f"\n{E('warn')} {sc('User could not be notified.')}"
-    msg = cb.get('message') or {}
-    _call('editMessageCaption', {'chat_id': msg['chat']['id'], 'message_id': msg['message_id'],
-          'caption': _plainify(_task_caption(sid, verdict)), 'parse_mode': 'HTML',
-          'reply_markup': json.dumps({'inline_keyboard': []})})
-    answer_callback(cb['id'], 'Done.')
-
-def admin_tasks_screen():
-    with db() as con: ts = con.execute("SELECT * FROM tasks WHERE active=1 ORDER BY id DESC LIMIT 15").fetchall()
-    with db() as con: pend = con.execute("SELECT COUNT(*) n FROM task_subs WHERE status='pending'").fetchone()['n']
-    lines = [bq(f"{E('pin')} {sc('Tasks')}"), "", row('time', 'Pending Proofs', pend), SEP]
-    if not ts: lines.append(sc('No active tasks.'))
-    for t in ts: lines.append(f"#{t['id']} <b>{esc(t['title'])}</b> ➛ +{t['reward']} {sc('checks')}")
-    rows = [[btn(f"Delete #{t['id']} {t['title'][:20]}", 'err', style='danger', callback_data=f"tkdel:{t['id']}")] for t in ts]
-    rows += [[btn('Add Task', 'ok', style='success', callback_data='atkadd')], [btn('Admin Panel', 'admin', callback_data='admin')]]
-    return "\n".join(lines), kb(*rows)
-
 def _resolve_msg(uid_token):
     r = find_user(uid_token); return r
 
@@ -1676,35 +1238,6 @@ def _admin_command(uid, chat, m, text):
         show_panel(chat, admin_text(), admin_kb()); return True
     if cmd == '/stats':
         notice(chat, _admin_stats_text(), ttl=30); return True
-    if cmd == '/backup':
-        threading.Thread(target=backup_now, args=('manual', chat), daemon=True).start()
-        notice(chat, f"{E('ok')} {sc('Backup is being sent.')}", ttl=6); return True
-    if cmd == '/restore':
-        STATE[uid] = {'k': 'restore'}
-        remember(chat, send_message(chat, _restore_prompt())); return True
-    if cmd == '/token':
-        code, err = create_token(a)
-        if code: notice(chat, token_created_text(code), ttl=60)
-        elif err == 'exists': notice(chat, f"{E('warn')} {sc('That code already exists.')}", ttl=8)
-        else: usage('/token [CODE] checks max_users [days]')
-        return True
-    if cmd == '/tokens':
-        t_, k_ = admin_tokens_screen(); show_panel(chat, t_, k_); return True
-    if cmd == '/deltoken':
-        if len(a) != 1: usage('/deltoken CODE'); return True
-        with db() as con: n = con.execute("UPDATE tokens SET active=0 WHERE code=?", (a[0].upper(),)).rowcount
-        notice(chat, f"{E('ok')} {sc('Token deleted.')}" if n else f"{E('warn')} {sc('Token not found.')}", ttl=8); return True
-    if cmd == '/tasks':
-        t_, k_ = admin_tasks_screen(); show_panel(chat, t_, k_); return True
-    if cmd == '/givechecks':
-        if len(a) != 2 or not a[1].isdigit() or int(a[1]) < 1: usage('/givechecks @username number'); return True
-        r = find_user(a[0])
-        if not r: nf(); return True
-        with db() as con: con.execute("UPDATE users SET bonus=COALESCE(bonus,0)+? WHERE user_id=?", (int(a[1]), r['user_id']))
-        send_message(r['user_id'], "\n".join([bq(f"{E('party')} {sc('Bonus checks added!')}"), "",
-            row('bolt', 'You Got', f"+{a[1]} {sc('checks')}"), row('star', 'Bonus Balance', bonus_of(r['user_id']))]),
-            reply_markup=back_kb())
-        notice(chat, f"{E('ok')} +{a[1]} {sc('checks for')} {esc(_label(r))}", ttl=10); return True
     if cmd == '/users':
         export_users(chat); return True
     if cmd == '/userinfo':
@@ -1742,6 +1275,18 @@ def _admin_command(uid, chat, m, text):
         with db() as con: con.execute("UPDATE users SET banned=? WHERE user_id=?", (1 if cmd == '/ban' else 0, r['user_id']))
         notice(chat, f"{E('ok')} {esc(_label(r))} ➛ {sc('banned') if cmd == '/ban' else sc('unbanned')}", ttl=10)
         log(f"{P('ban')} <b>{sc('Banned') if cmd == '/ban' else sc('Unbanned')}</b>\n{_utag_id(r['user_id'])}"); return True
+    if cmd == '/proxies':
+        notice(chat, px_status(), ttl=40); return True
+    if cmd == '/addproxy':
+        if len(a) != 1: usage('/addproxy ip:port  or  user:pass@ip:port'); return True
+        if px_add(a[0]):
+            try:
+                with open(PROXY_FILE, 'a', encoding='utf-8') as f: f.write(a[0] + "\n")
+            except Exception: pass
+            notice(chat, f"{E('ok')} {sc('Proxy added.')}", ttl=8)
+        else:
+            notice(chat, f"{E('warn')} {sc('Invalid or already in the pool.')}", ttl=8)
+        return True
     if cmd == '/msg':
         p3 = text.split(maxsplit=2)
         if len(p3) != 3: usage('/msg @username your message'); return True
@@ -1778,69 +1323,6 @@ def _handle_state_message(uid, chat, m, st):
         tidy(chat, mid); STATE.pop(uid, None); sweep(chat)
         ok = bool(send_message(st['to'], text, parse_mode=None)) if text else False
         notice(chat, (f"{E('ok')} {sc('Message delivered to')} " if ok else f"{E('err')} {sc('Could not deliver to')} ") + esc(st['label']), ttl=10)
-    elif k == 'restore' and is_admin(uid):
-        doc = m.get('document'); tidy(chat, mid)
-        if not doc:
-            return notice(chat, f"{E('warn')} {sc('Send the backup file as a document, or /cancel to stop.')}", ttl=8)
-        if (doc.get('file_size') or 0) > 20 * 1024 * 1024:
-            return notice(chat, f"{E('err')} {sc('File is too big (max 20 MB).')}", ttl=8)
-        STATE.pop(uid, None); sweep(chat)
-        wait_mid = send_message(chat, f"{E('spin')} {sc('Restoring backup...')}")
-        data = _download_file(doc['file_id'])
-        ok, err = restore_from_bytes(data) if data else (False, 'Could not download the file.')
-        if wait_mid: _del(chat, wait_mid)
-        if ok:
-            notice(chat, f"{E('ok')} <b>{sc('Backup restored')}</b>\n{sc('Users, premium, payments and logs were loaded.')}", ttl=20)
-            log(f"{P('ok')} <b>{sc('Backup restored')}</b> ‣ {esc(doc.get('file_name') or '')}")
-        else:
-            notice(chat, f"{E('err')} {sc('Restore failed')}: {esc(err)}\n{sc('Your current data was not changed.')}", ttl=15)
-    elif k == 'redeem':
-        tidy(chat, mid)
-        if not text: return
-        if _redeem_locked(uid):
-            return notice(chat, f"{E('ban')} {sc('Too many wrong codes. Try again in 10 minutes.')}", ttl=8)
-        status, val = redeem_token(uid, text)
-        if status == 'ok':
-            STATE.pop(uid, None); _RFAIL.pop(uid, None)
-            show_panel(chat, "\n".join([bq(f"{E('party')} {sc('Code redeemed!')}"), "",
-                row('bolt', 'Added', f"+{val} {sc('checks')}"), row('star', 'Bonus Balance', bonus_of(uid))]), _go_free_kb())
-        else:
-            if status == 'invalid': _RFAIL.setdefault(uid, []).append(time.time())
-            msg = {'invalid': 'This code is invalid.', 'expired': 'This code has expired.',
-                   'used': 'You already used this code.', 'exhausted': 'This code has reached its limit.'}[status]
-            notice(chat, f"{E('err')} {sc(msg)}\n{sc('Send another code or /cancel.')}", ttl=8)
-    elif k == 'tshot':
-        if m.get('photo'): _task_submit(uid, chat, m, st)
-        else:
-            tidy(chat, mid)
-            notice(chat, f"{E('warn')} {sc('Please send the proof as a photo, or /cancel to stop.')}", ttl=6)
-    elif k == 'tkn' and is_admin(uid):
-        tidy(chat, mid); code, err = create_token(text.split())
-        if not code:
-            return notice(chat, f"{E('warn')} " + (sc('That code already exists.') if err == 'exists'
-                          else sc('Wrong format. Example: 50 10 7')), ttl=8)
-        STATE.pop(uid, None); sweep(chat)
-        show_panel(chat, token_created_text(code), kb([btn('Tokens', 'lock', callback_data='atokens')],
-                                                      [btn('Admin Panel', 'admin', callback_data='admin')]))
-    elif k == 'tk_t' and is_admin(uid):
-        tidy(chat, mid)
-        if not text: return
-        STATE[uid] = {'k': 'tk_d', 'title': text[:60]}; sweep(chat)
-        remember(chat, send_message(chat, f"{E('pin')} {sc('Now send the task description (include the link).')}\n{sc('Send /cancel to stop.')}"))
-    elif k == 'tk_d' and is_admin(uid):
-        tidy(chat, mid)
-        if not text: return
-        STATE[uid] = {'k': 'tk_r', 'title': st['title'], 'desc': text[:800]}; sweep(chat)
-        remember(chat, send_message(chat, f"{E('bolt')} {sc('How many checks should this task give? Send a number.')}"))
-    elif k == 'tk_r' and is_admin(uid):
-        tidy(chat, mid)
-        if not text.isdigit() or int(text) < 1:
-            return notice(chat, f"{E('warn')} {sc('Send a number like 25.')}", ttl=6)
-        with db() as con:
-            con.execute("INSERT INTO tasks(title,description,reward,active,created_at) VALUES(?,?,?,1,?)",
-                        (st['title'], st['desc'], int(text), _now()))
-        STATE.pop(uid, None); sweep(chat)
-        t_, k_ = admin_tasks_screen(); show_panel(chat, t_, k_)
     # 'bcok' waits for the buttons; other messages are ignored
 
 def _handle_callback(cb):
@@ -1855,16 +1337,12 @@ def _handle_callback(cb):
         if data == 'back_menu': _CB[chat] = (mid, bool(msg.get('photo')))
         return False                                   # run_bot handles these exactly as before
     admin_data = data in ('admin', 'astats', 'ausers', 'apremium', 'abroadcast', 'aexport', 'aban', 'auserinfo',
-                          'amsg', 'abc_go', 'abc_no', 'acheck', 'abackup', 'arestore', 'atoken', 'atokens', 'atasks', 'atkadd') \
-                 or data.startswith(('payok:', 'payno:', 'tkok:', 'tkno:', 'tkdel:', 'tokdel:'))
+                          'amsg', 'abc_go', 'abc_no') or data.startswith(('payok:', 'payno:'))
     if admin_data and not is_admin(uid):
         answer_callback(cb['id'], 'Not allowed.', True); return True
     if data.startswith('payok:') or data.startswith('payno:'):
         _review(cb, data.startswith('payok:')); return True
-    if data.startswith(('tkok:', 'tkno:')):
-        _review_task(cb, data.startswith('tkok:')); return True
     answer_callback(cb['id'])
-    if data not in ('abc_go', 'abc_no'): STATE.pop(uid, None)      # leaving a screen cancels any open input step
     if data == 'buy':
         STATE.pop(uid, None); sweep(chat, keep=mid); safe_edit(cb, plans_text(), plans_kb())
     elif data.startswith('plan:') and data[5:] in PLANS:
@@ -1916,51 +1394,6 @@ def _handle_callback(cb):
         safe_edit(cb, "\n".join(lines), admin_kb())
     elif data == 'aexport':
         export_users(chat)
-    elif data == 'acheck':
-        safe_edit(cb, check_report_text(), kb([btn('Refresh', 'spin', callback_data='acheck')],
-                                              [btn('Admin Panel', 'admin', callback_data='admin')]))
-    elif data == 'abackup':
-        threading.Thread(target=backup_now, args=('manual', chat), daemon=True).start()
-        notice(chat, f"{E('ok')} {sc('Backup is being sent.')}", ttl=6)
-    elif data == 'arestore':
-        STATE[uid] = {'k': 'restore'}
-        remember(chat, send_message(chat, _restore_prompt()))
-    elif data == 'free':
-        sweep(chat, keep=mid); safe_edit(cb, free_text(uid), free_kb())
-    elif data == 'redeem':
-        sweep(chat, keep=mid); STATE[uid] = {'k': 'redeem'}
-        safe_edit(cb, redeem_prompt(), kb([btn('Back', 'home', callback_data='free')]))
-    elif data == 'refer':
-        safe_edit(cb, refer_text(uid), refer_kb(uid))
-    elif data == 'tasks':
-        sweep(chat, keep=mid); t_, k_ = tasks_screen(uid); safe_edit(cb, t_, k_)
-    elif data.startswith('task:') and data[5:].isdigit():
-        t_, k_ = task_detail(uid, int(data[5:]))
-        if t_: safe_edit(cb, t_, k_)
-        else: notice(chat, f"{E('err')} {sc('This task is no longer available.')}", ttl=6)
-    elif data.startswith('tsub:') and data[5:].isdigit():
-        tid = int(data[5:])
-        if task_status(uid, tid) in ('approved', 'pending'):
-            return answer_callback(cb['id'], 'You already submitted this task.', True) or True
-        with db() as con: ok_t = con.execute("SELECT 1 FROM tasks WHERE id=? AND active=1", (tid,)).fetchone()
-        if not ok_t: return answer_callback(cb['id'], 'Task is no longer available.', True) or True
-        STATE[uid] = {'k': 'tshot', 'task': tid}
-        remember(chat, send_message(chat, f"{E('camera')} {sc('Send your proof screenshot now as a photo.')}\n{sc('Send /cancel to stop.')}"))
-    elif data == 'atoken':
-        STATE[uid] = {'k': 'tkn'}; remember(chat, send_message(chat, token_prompt()))
-    elif data == 'atokens':
-        t_, k_ = admin_tokens_screen(); safe_edit(cb, t_, k_)
-    elif data.startswith('tokdel:'):
-        with db() as con: con.execute("UPDATE tokens SET active=0 WHERE code=?", (data[7:],))
-        t_, k_ = admin_tokens_screen(); safe_edit(cb, t_, k_)
-    elif data == 'atasks':
-        t_, k_ = admin_tasks_screen(); safe_edit(cb, t_, k_)
-    elif data == 'atkadd':
-        STATE[uid] = {'k': 'tk_t'}
-        remember(chat, send_message(chat, f"{E('pin')} {sc('Send the task title (example: Watch our video).')}\n{sc('Send /cancel to stop.')}"))
-    elif data.startswith('tkdel:') and data[6:].isdigit():
-        with db() as con: con.execute("UPDATE tasks SET active=0 WHERE id=?", (int(data[6:]),))
-        t_, k_ = admin_tasks_screen(); safe_edit(cb, t_, k_)
     elif data == 'aban':
         safe_edit(cb, "\n".join([bq(f"{E('ban')} {sc('Ban / unban')}"), "", "<code>/ban @username</code>", "<code>/unban @username</code>"]), admin_kb())
     elif data == 'auserinfo':
@@ -1989,21 +1422,14 @@ def _handle_callback(cb):
 def _handle_message(m):
     frm = m.get('from', {}); uid = frm.get('id'); chat = m.get('chat', {}).get('id')
     if not uid or m.get('chat', {}).get('type') != 'private': return True
+    register(frm)
     text = (m.get('text') or '').strip(); mid = m['message_id']
-    ref = None
-    if text.startswith('/start'):                 # /start ref_<userid>  (referral link)
-        pp = text.split()
-        if len(pp) > 1 and pp[1].startswith('ref_') and pp[1][4:].isdigit(): ref = int(pp[1][4:])
-    register(frm, ref)
     if is_banned(uid) and not is_admin(uid):
         if text == '/start': tidy(chat, mid)
         notice(chat, f"{E('ban')} {sc('Your access has been disabled.')}", ttl=15); return True
     cmd = text.split()[0].split('@')[0].lower() if text.startswith('/') else ''
     if cmd in ('/start', '/help'):
-        STATE.pop(uid, None); tidy(chat, mid); sweep(chat)
-        if len(text.split()) > 1:                 # "/start payload" is not matched by run_bot -> show home here
-            send_welcome(chat); return True
-        return False                              # run_bot shows the home panel
+        STATE.pop(uid, None); tidy(chat, mid); sweep(chat); return False    # run_bot shows the home panel
     if cmd == '/cancel':
         st = STATE.pop(uid, None); tidy(chat, mid); sweep(chat)
         if st and st.get('src'): _del(*st['src'])
@@ -2031,35 +1457,18 @@ def _handle_extra(u):
     if 'message' in u:        return _handle_message(u['message'])
     return False
 
-def _poll(offset=None):
-    """getUpdates that reports API errors instead of silently returning nothing."""
-    try:
-        r = requests.get(f"{API_URL}/getUpdates", params={'timeout': 25, 'offset': offset,
-                         'allowed_updates': json.dumps(['message', 'callback_query'])}, timeout=35).json()
-    except Exception as e:
-        print(f"{spy28}[!] network: {e}{reset}"); time.sleep(2); return []
-    if not r.get('ok'):
-        print(f"{spy28}[!] getUpdates failed: {r.get('description')}{reset}")
-        if r.get('error_code') == 409:
-            print(f"{spy28}[!] ANOTHER copy of this bot is running with the same token - stop the old one.{reset}")
-        time.sleep(3); return []
-    return r.get('result', [])
-
-_orig_get_updates = _poll
+_orig_get_updates = get_updates
 def get_updates(offset=None):
     keep = []
     for u in _orig_get_updates(offset):
         try:    consumed = _handle_extra(u)
         except Exception as e:
             print(f"{spy28}[!] ui error: {e}{reset}"); consumed = True
-            if 'callback_query' in u: answer_callback(u['callback_query'].get('id'), 'Something went wrong, please try again.', True)
         keep.append({'update_id': u.get('update_id')} if consumed else u)
     return keep
 
 init_db()
-if LOG_CHANNEL:
-    threading.Thread(target=_log_worker, daemon=True).start()
-    threading.Thread(target=_backup_worker, daemon=True).start()
+if LOG_CHANNEL: threading.Thread(target=_log_worker, daemon=True).start()
 if not OWNER_ID:
     print(f"{spy28}[!] OWNER_ID not set - admin panel and payment approval are disabled{reset}")
 if not LOG_CHANNEL:
@@ -2067,6 +1476,212 @@ if not LOG_CHANNEL:
 if qrcode is None:
     print(f"{spy28}[!] qrcode missing (pip install \"qrcode[pil]\") - users will only see the UPI id{reset}")
 
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+#  HI2 CHECKER FIX + PROXY POOL
+#  Replaces check_hi2_email (same name, same return values: taken / not_taken /
+#  unknown). solve_recaptcha_hi2 is untouched.
+#
+#  Why "free" was shown for taken mails:
+#   1. old code said "not taken" for ANY reply that wasn't clearly "taken"
+#      (rate-limit page, captcha error, empty reply ...)
+#   2. every request came from the same IP with the same hard-coded cookies
+#  Now:
+#   - "free" only on a clear positive reply (otherwise unknown), confirmed twice
+#   - fresh cookie-less session on every attempt
+#   - PROXY POOL: requests are spread over many IPs. A proxy that gets blocked
+#     is paused (growing cool-down), dead proxies are dropped, your own IP is
+#     used as a fallback. Each IP is spaced out separately.
+# ═══════════════════════════════════════════════════════════════════════════
+PROXIES      = []      # inline list, e.g. ['http://user:pass@1.2.3.4:8080', 'socks5h://host:1080']
+PROXY_FILE   = os.getenv('PROXY_FILE', 'proxies.txt')        # one proxy per line (ip:port, user:pass@ip:port or full url)
+ALLOW_DIRECT = True    # also use this server's own IP as one of the routes
+AUTO_FREE_PROXIES = os.getenv('AUTO_FREE_PROXIES', '1') == '1'   # ON by default: fetch + test free public proxies (set env to 0 to disable)
+FREE_PROXY_MAX    = 25
+FREE_PROXY_SOURCES = [
+    'https://raw.githubusercontent.com/TheSpeedX/PROXY-List/master/http.txt',
+    'https://raw.githubusercontent.com/monosans/proxy-list/main/proxies/http.txt',
+    'https://api.proxyscrape.com/v2/?request=getproxies&protocol=http&timeout=5000&country=all',
+]
+MIN_GAP      = 2.5     # seconds between requests on the SAME route
+CONFIRM_FREE = True    # re-check every "free" result once on another route / fresh session
+MAX_TRIES    = 4
+HI2_DEBUG    = 'hi2_debug.log'      # unrecognised replies are saved here (send me a sample)
+
+_pl = threading.Lock()
+_POOL = {}             # key -> route dict
+_BLOCK_WORDS = ('captcha', 'recaptcha', 'too many', 'rate limit', 'ratelimit', 'limit exceeded',
+                'forbidden', 'blocked', 'access denied', 'cloudflare', 'try again', 'temporarily',
+                'denied', 'robot', 'suspicious', '<html', '<!doctype')
+
+def _px_norm(p):
+    p = (p or '').strip()
+    if not p or p.startswith('#'): return None
+    return p if '://' in p else 'http://' + p
+
+def _px_mask(url):
+    return 'direct' if not url else _re.sub(r'//[^@/]*@', '//***@', url)
+
+def px_add(p, free=False):
+    url = _px_norm(p)
+    if not url: return False
+    with _pl:
+        if url in _POOL: return False
+        _POOL[url] = {'url': url, 'next': 0.0, 'fails': 0, 'cool': 0.0, 'ok': 0, 'bad': 0, 'free': free}
+    return True
+
+def px_load():
+    for p in PROXIES: px_add(p)
+    try:
+        with open(PROXY_FILE, 'r', encoding='utf-8') as f:
+            for line in f: px_add(line)
+    except Exception:
+        pass
+    with _pl:
+        if (ALLOW_DIRECT or not _POOL) and 'direct' not in _POOL:
+            _POOL['direct'] = {'url': None, 'next': 0.0, 'fails': 0, 'cool': 0.0, 'ok': 0, 'bad': 0, 'free': False}
+
+def _px_pick(exclude=None, max_wait=45):
+    """choose the route that is free soonest; reserves its next slot. -> (route, start_time) or (None, 0)"""
+    deadline = time.time() + max_wait
+    while True:
+        now_ = time.time()
+        with _pl:
+            cands = [e for e in _POOL.values() if e['cool'] <= now_ and e is not exclude]
+            if not cands: cands = [e for e in _POOL.values() if e['cool'] <= now_]
+            if cands:
+                e = min(cands, key=lambda x: (x['next'], x['fails']))
+                start = max(now_, e['next'])
+                e['next'] = start + MIN_GAP + random.uniform(0.3, 1.2) + min(e['fails'], 5) * 3
+                return e, start
+            wait = (min(e['cool'] for e in _POOL.values()) - now_) if _POOL else 5
+        if time.time() + min(max(wait, 0.5), 10) > deadline: return None, 0
+        time.sleep(min(max(wait, 0.5), 10))
+
+def _px_mark(e, verdict):
+    with _pl:
+        if verdict in ('taken', 'not_taken'):
+            e['fails'] = 0; e['ok'] += 1; e['cool'] = 0.0
+            return
+        e['fails'] += 1; e['bad'] += 1
+        if verdict == 'conn':      e['cool'] = time.time() + min(120 * e['fails'], 1800)      # dead / unreachable
+        elif verdict == 'blocked': e['cool'] = time.time() + min(45 * (2 ** (e['fails'] - 1)), 900)
+        elif e['fails'] >= 3:      e['cool'] = time.time() + 60
+        if e['free'] and e['ok'] == 0 and e['fails'] >= 3:
+            _POOL.pop(e['url'], None)                                                         # useless free proxy
+
+def px_status():
+    now_ = time.time()
+    with _pl: es = list(_POOL.values())
+    lines = [bq(f"{E('link')} {sc('Proxy pool')} ({len(es)})"), ""]
+    for e in sorted(es, key=lambda x: -x['ok'])[:25]:
+        st = f"{sc('cooling')} {int(e['cool'] - now_)}s" if e['cool'] > now_ else sc('ready')
+        tag = ' 🆓' if e['free'] else ''
+        lines.append(f"{E('ok') if e['ok'] else E('time')} <code>{esc(_px_mask(e['url']))}</code>{tag} ➛ "
+                     f"{e['ok']}✓ {e['bad']}✗ · {st}")
+    if not es: lines.append(sc('Empty.'))
+    lines += [SEP, row('bolt', 'Auto Free', sc('On') if AUTO_FREE_PROXIES else sc('Off'))]
+    return "\n".join(lines)
+
+def _free_proxy_worker():
+    import concurrent.futures as cf
+    pat = _re.compile(r'^\d{1,3}(?:\.\d{1,3}){3}:\d{2,5}$')
+    def test(p):
+        try:
+            u = 'http://' + p
+            return p if requests.get('https://api.ipify.org', proxies={'http': u, 'https': u}, timeout=6).status_code == 200 else None
+        except Exception:
+            return None
+    while True:
+        try:
+            found = set()
+            for src in FREE_PROXY_SOURCES:
+                try:
+                    for ln in requests.get(src, timeout=20).text.splitlines()[:600]:
+                        if pat.match(ln.strip()): found.add(ln.strip())
+                except Exception:
+                    continue
+            cands = random.sample(sorted(found), min(len(found), 150))
+            with cf.ThreadPoolExecutor(40) as ex: good = [p for p in ex.map(test, cands) if p]
+            with _pl: have = sum(1 for e in _POOL.values() if e['free'])
+            for p in good:
+                if have >= FREE_PROXY_MAX: break
+                if px_add(p, free=True): have += 1
+        except Exception as ex:
+            print(f"{spy28}[!] free proxy fetch: {ex}{reset}")
+        time.sleep(1800)
+
+# ─────────────────────────── the checker ───────────────────────────────────
+def _hi2_dump(why, r):
+    try:
+        with open(HI2_DEBUG, 'a', encoding='utf-8') as f:
+            f.write(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] {why} status={getattr(r, 'status_code', '?')} "
+                    f"body={(getattr(r, 'text', '') or '')[:400]!r}\n")
+    except Exception:
+        pass
+
+def _hi2_classify(r):
+    """-> 'taken' | 'not_taken' | 'blocked' | 'unknown'"""
+    body = (r.text or '').lower(); code = r.status_code
+    if code in (403, 429) or code >= 500: return 'blocked'
+    try: j = r.json()
+    except Exception: j = None
+    if isinstance(j, dict):
+        if j.get('available') is False: return 'taken'
+        if j.get('error') and 'taken' in str(j).lower(): return 'taken'
+    if 'already taken' in body: return 'taken'
+    if any(w in body for w in _BLOCK_WORDS): return 'blocked'
+    if isinstance(j, dict):
+        if j.get('available') is True: return 'not_taken'
+        if code == 200 and 'error' not in j: return 'not_taken'        # clean success reply
+    return 'unknown'
+
+def _hi2_once(prefix, domain, attempt, route):
+    s = build_session(seed_cookies=(attempt % 2 == 1))                 # fresh session, no shared cookies
+    if route and route.get('url'): s.proxies = {'http': route['url'], 'https': route['url']}
+    try:
+        token = solve_recaptcha_hi2(s)
+        if not token: return 'blocked'
+        headers = {'User-Agent': s.headers['User-Agent'], 'Accept': 'application/json, text/plain, */*',
+                   'Accept-Language': 'en-US,en;q=0.5', 'Content-Type': 'application/x-www-form-urlencoded',
+                   'Authorization': 'Basic bnVsbA==', 'Origin': 'https://hi2.in', 'Referer': 'https://hi2.in/'}
+        r = s.post('https://hi2.in/api/custom', headers=headers,
+                   data={'domain': domain, 'prefix': prefix, 'recaptcha': token}, timeout=15)
+        v = _hi2_classify(r)
+        if v in ('unknown', 'blocked'): _hi2_dump(v, r)
+        return v
+    except Exception:
+        return 'conn'
+    finally:
+        try: s.close()
+        except Exception: pass
+
+def check_hi2_email(email):
+    if '@' not in email: return 'unknown'
+    prefix, domain = email.split('@', 1); domain = domain.lower()
+    last = None
+    for attempt in range(MAX_TRIES):
+        e, start = _px_pick(last)                      # a different route on every attempt
+        if e is None: return 'unknown'
+        if start > time.time(): time.sleep(start - time.time())
+        v = _hi2_once(prefix, domain, attempt, e); _px_mark(e, v); last = e
+        if v == 'taken': return 'taken'
+        if v == 'not_taken':
+            if not CONFIRM_FREE: return 'not_taken'
+            e2, st2 = _px_pick(e)
+            if e2 is None: return 'unknown'
+            if st2 > time.time(): time.sleep(st2 - time.time())
+            v2 = _hi2_once(prefix, domain, attempt + 1, e2); _px_mark(e2, v2)
+            if v2 == 'taken': return 'taken'
+            if v2 == 'not_taken': return 'not_taken'   # confirmed twice
+            last = e2; continue                        # could not confirm -> never claim "free"
+        time.sleep(1 + random.random())
+    return 'unknown'
+
+px_load()
+if AUTO_FREE_PROXIES: threading.Thread(target=_free_proxy_worker, daemon=True).start()
+print(f"{spy28}[i] routes in pool: {len(_POOL)}  (free-proxy fetch: {'on' if AUTO_FREE_PROXIES else 'off'}){reset}")
 
 
 run_bot()
