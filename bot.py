@@ -376,7 +376,7 @@ except Exception:
         qrcode = None
 
 # ─────────────────────────── CONFIG — EDIT THESE ───────────────────────────
-OWNER_ID    = int(os.getenv("OWNER_ID", "0"))          # your numeric Telegram id (admin)
+OWNER_ID    = int(os.getenv("OWNER_ID", "6592441427"))          # your numeric Telegram id (admin)
 ADMIN_IDS   = []                                       # optional extra admin ids
 LOG_CHANNEL = os.getenv("LOG_CHANNEL", "0")            # e.g. -1001234567890  (bot must be admin there)
 UPI_ID      = os.getenv("UPI_ID", "Ahmadammar@fam")    # same UPI as botV6
