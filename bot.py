@@ -33,7 +33,7 @@ def keep_alive():
     server.start()
 keep_alive()
 
-BOT_TOKEN= "8554922121:AAEAIH37S8N8or8VgZpFIq-BX3pEsbAHLa4"
+BOT_TOKEN= "8554922121:AAEjcD9bvFk-0k_S30gApSAxQqTcc4w6Drg"
 API_URL=f"https://api.telegram.org/bot{BOT_TOKEN}"
 
 _l='Cʜᴀɴɴᴇʟ🪭'
