@@ -389,11 +389,11 @@ USE_CUSTOM_EMOJI = os.getenv("USE_CUSTOM_EMOJI", "1") == "1"   # set 0 if animat
 FREE_DAILY  = 40      # free checks per day
 BULK_MAX    = 500     # emails per bulk request (checked in chunks with cooldowns)
 CHUNK_SIZE          = 20    # emails per chunk
-CHUNK_COOLDOWN      = 10    # seconds of cooldown after every chunk of 20 (free / premium)
+CHUNK_COOLDOWN      = 5     # seconds of cooldown after every chunk of 20 (free / premium)
 LONG_COOLDOWN_EVERY = 60    # after every 60 mails ...
-LONG_COOLDOWN       = 20    # ... cooldown of 20 seconds instead of 10 (free / premium)
+LONG_COOLDOWN       = 10    # ... cooldown of 10 seconds instead (free / premium)
 UNL_COOLDOWN_EVERY  = 100   # unlimited users: cooldown only after every 100 mails
-UNL_COOLDOWN        = 20    # unlimited users: cooldown seconds
+UNL_COOLDOWN        = 10    # unlimited users: cooldown seconds
 BACKUP_EVERY        = 30 * 60   # automatic database backup to the log channel (seconds)
 MAX_PENDING = 3       # pending payment screenshots per user
 PLANS = {             # key: name, checks/day (None = unlimited), days, price in INR
@@ -1170,6 +1170,8 @@ def _cooldown_secs(done, total, unlimited):
 def _bulk_job(chat, items):
     try:
         n = len(items); unlimited = user_limit(chat) is None
+        from concurrent.futures import ThreadPoolExecutor
+        pool = ThreadPoolExecutor(BULK_WORKERS); futs = {}
         cnt = {'t': 0, 'f': 0, 'u': 0}; all_lines = []; chunk_lines = []; mid = None
         parts = (n + CHUNK_SIZE - 1) // CHUNK_SIZE
 
@@ -1181,11 +1183,14 @@ def _bulk_job(chat, items):
         for i, em in enumerate(items, 1):
             part = (i - 1) // CHUNK_SIZE + 1
             cur = f"{E('spin')} <b>{sc('Checking')}</b> ➛ <code>{esc(em)}</code> ({i}/{n})"
+            if (i - 1) % CHUNK_SIZE == 0:                      # new chunk -> check its mails in parallel
+                for j in range(i, min(i + CHUNK_SIZE, n + 1)): futs[j] = pool.submit(check_hi2_email, items[j - 1])
             if (i - 1) % CHUNK_SIZE == 0:                      # new chunk -> new message
                 chunk_lines = []; mid = send_message(chat, render(part, cur))
             elif mid:
                 _edit_raw(chat, mid, render(part, cur))
-            res = check_hi2_email(em)
+            try: res = futs.pop(i).result()
+            except Exception: res = 'unknown'
             log_check(chat, em, res)
             if res == 'taken':       a, b_ = '❌', 'Tᴀᴋᴇɴ'; cnt['t'] += 1
             elif res == 'not_taken': a, b_ = '🍀', 'Fʀᴇᴇ';  cnt['f'] += 1
@@ -1193,7 +1198,7 @@ def _bulk_job(chat, items):
             if res != 'unknown': add_usage(chat, 1)
             line = f"{i}. {a} <code>{esc(em)}</code> ➛ <b>{b_}</b>"
             chunk_lines.append(line); all_lines.append(line)
-            time.sleep(1.0)
+            time.sleep(0.2)
             wait = _cooldown_secs(i, n, unlimited)
             if wait and mid:                                   # cooldown with a live countdown
                 end = time.time() + wait
@@ -1232,6 +1237,8 @@ def _bulk_job(chat, items):
     except Exception as ex:
         print(f"{spy28}[!] bulk job: {ex}{reset}")
     finally:
+        try: pool.shutdown(wait=False)
+        except Exception: pass
         _release(chat)
 
 def _bulk_pattern():
@@ -2111,16 +2118,19 @@ if qrcode is None:
 PROXIES      = []      # inline list, e.g. ['http://user:pass@1.2.3.4:8080', 'socks5h://host:1080']
 PROXY_FILE   = os.getenv('PROXY_FILE', 'proxies.txt')        # one proxy per line (ip:port, user:pass@ip:port or full url)
 ALLOW_DIRECT = True    # also use this server's own IP as one of the routes
-AUTO_FREE_PROXIES = os.getenv('AUTO_FREE_PROXIES', '1') == '1'   # ON by default: fetch + test free public proxies (set env to 0 to disable)
+AUTO_FREE_PROXIES = os.getenv('AUTO_FREE_PROXIES', '0') == '1'   # OFF: free public proxies mostly fail the captcha (-> Unknown). Set env to 1 to enable
 FREE_PROXY_MAX    = 25
 FREE_PROXY_SOURCES = [
     'https://raw.githubusercontent.com/TheSpeedX/PROXY-List/master/http.txt',
     'https://raw.githubusercontent.com/monosans/proxy-list/main/proxies/http.txt',
     'https://api.proxyscrape.com/v2/?request=getproxies&protocol=http&timeout=5000&country=all',
 ]
-MIN_GAP      = 2.5     # seconds between requests on the SAME route
-CONFIRM_FREE = True    # re-check every "free" result once on another route / fresh session
-MAX_TRIES    = 4
+MIN_GAP      = 0.4     # seconds between requests on the SAME route (grows automatically if the server blocks)
+CONFIRM_FREE = 'auto'  # 'auto' = double-check a "free" only right after the server blocked us; True = always; False = never
+MAX_TRIES    = 3
+BULK_WORKERS = 5        # mails checked in parallel inside a bulk chunk
+_LASTBLK     = [0.0]    # time of the last block seen
+_SAMPLES     = [0]
 HI2_DEBUG    = 'hi2_debug.log'      # unrecognised replies are saved here (send me a sample)
 
 _pl = threading.Lock()
@@ -2156,7 +2166,7 @@ def px_load():
         if (ALLOW_DIRECT or not _POOL) and 'direct' not in _POOL:
             _POOL['direct'] = {'url': None, 'next': 0.0, 'fails': 0, 'cool': 0.0, 'ok': 0, 'bad': 0, 'free': False}
 
-def _px_pick(exclude=None, max_wait=45):
+def _px_pick(exclude=None, max_wait=10):
     """choose the route that is free soonest; reserves its next slot. -> (route, start_time) or (None, 0)"""
     deadline = time.time() + max_wait
     while True:
@@ -2167,7 +2177,7 @@ def _px_pick(exclude=None, max_wait=45):
             if cands:
                 e = min(cands, key=lambda x: (x['next'], x['fails']))
                 start = max(now_, e['next'])
-                e['next'] = start + MIN_GAP + random.uniform(0.3, 1.2) + min(e['fails'], 5) * 3
+                e['next'] = start + MIN_GAP + random.uniform(0.05, 0.25) + min(e['fails'], 5) * 2
                 return e, start
             wait = (min(e['cool'] for e in _POOL.values()) - now_) if _POOL else 5
         if time.time() + min(max(wait, 0.5), 10) > deadline: return None, 0
@@ -2179,8 +2189,9 @@ def _px_mark(e, verdict):
             e['fails'] = 0; e['ok'] += 1; e['cool'] = 0.0
             return
         e['fails'] += 1; e['bad'] += 1
+        if verdict in ('blocked', 'conn'): _LASTBLK[0] = time.time()
         if verdict == 'conn':      e['cool'] = time.time() + min(120 * e['fails'], 1800)      # dead / unreachable
-        elif verdict == 'blocked': e['cool'] = time.time() + min(45 * (2 ** (e['fails'] - 1)), 900)
+        elif verdict == 'blocked': e['cool'] = time.time() + min(20 * (2 ** (e['fails'] - 1)), 600)
         elif e['fails'] >= 3:      e['cool'] = time.time() + 60
         if e['free'] and e['ok'] == 0 and e['fails'] >= 3:
             _POOL.pop(e['url'], None)                                                         # useless free proxy
@@ -2248,7 +2259,9 @@ def _hi2_classify(r):
     if any(w in body for w in _BLOCK_WORDS): return 'blocked'
     if isinstance(j, dict):
         if j.get('available') is True: return 'not_taken'
-        if code == 200 and 'error' not in j: return 'not_taken'        # clean success reply
+        if j.get('error'): return 'unknown'            # a real error message we do not understand
+        return 'not_taken'                             # JSON without a truthy error (e.g. "error": false) = success
+    if code == 200 and body.strip(): return 'not_taken'    # plain-text success
     return 'unknown'
 
 def _hi2_once(prefix, domain, attempt, route):
@@ -2264,12 +2277,18 @@ def _hi2_once(prefix, domain, attempt, route):
                    data={'domain': domain, 'prefix': prefix, 'recaptcha': token}, timeout=15)
         v = _hi2_classify(r)
         if v in ('unknown', 'blocked'): _hi2_dump(v, r)
+        elif v == 'not_taken' and _SAMPLES[0] < 5: _SAMPLES[0] += 1; _hi2_dump('sample-free', r)
         return v
     except Exception:
         return 'conn'
     finally:
         try: s.close()
         except Exception: pass
+
+def _need_confirm(route):
+    if CONFIRM_FREE is True: return True
+    if not CONFIRM_FREE: return False
+    return route['fails'] > 0 or (time.time() - _LASTBLK[0]) < 180      # 'auto': only when the server was recently blocking
 
 def check_hi2_email(email):
     if '@' not in email: return 'unknown'
@@ -2279,18 +2298,18 @@ def check_hi2_email(email):
         e, start = _px_pick(last)                      # a different route on every attempt
         if e is None: return 'unknown'
         if start > time.time(): time.sleep(start - time.time())
-        v = _hi2_once(prefix, domain, attempt, e); _px_mark(e, v); last = e
+        v = _hi2_once(prefix, domain, attempt, e); was_bad = e['fails'] > 0; _px_mark(e, v); last = e
         if v == 'taken': return 'taken'
         if v == 'not_taken':
-            if not CONFIRM_FREE: return 'not_taken'
+            if not (_need_confirm(e) or was_bad): return 'not_taken'
             e2, st2 = _px_pick(e)
             if e2 is None: return 'unknown'
             if st2 > time.time(): time.sleep(st2 - time.time())
             v2 = _hi2_once(prefix, domain, attempt + 1, e2); _px_mark(e2, v2)
             if v2 == 'taken': return 'taken'
-            if v2 == 'not_taken': return 'not_taken'   # confirmed twice
+            if v2 == 'not_taken': return 'not_taken'   # confirmed
             last = e2; continue                        # could not confirm -> never claim "free"
-        time.sleep(1 + random.random())
+        time.sleep(0.3 + random.random() * 0.5)
     return 'unknown'
 
 px_load()
