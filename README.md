@@ -1,16 +1,19 @@
 <div align="center">
 
-# ✨ Erebus · Hi2 Mail Checker Bot 👾
+# ✨ Erebus · Media Archive Bot 👾
 
-**A Telegram bot that checks whether `@hi2.in` (and `@telegmail.com`) addresses are free or taken.**
-Single & bulk checks · Daily limits · Premium plans · Referrals · Tokens · Tasks · Auto-backups · Admin panel
+**Save any photo, video or file from your chats with one word, catch deleted messages, and automate your Telegram account.**
+Telegram Business bot · Archive · Deleted-message saver · Repeater · Auto-reply · Scheduler · Premium · Admin panel
 
-![Python](https://img.shields.io/badge/Python-3.9%2B-3776AB?logo=python&logoColor=white)
-![Telegram](https://img.shields.io/badge/Telegram-Bot%20API-26A5E4?logo=telegram&logoColor=white)
+![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB?logo=python&logoColor=white)
+![aiogram](https://img.shields.io/badge/aiogram-3.x-26A5E4?logo=telegram&logoColor=white)
 ![SQLite](https://img.shields.io/badge/Database-SQLite-003B57?logo=sqlite&logoColor=white)
+![Languages](https://img.shields.io/badge/Languages-English%20%7C%20%E0%A4%B9%E0%A4%BF%E0%A4%A8%E0%A5%8D%E0%A4%A6%E0%A5%80-8A2BE2)
 ![Status](https://img.shields.io/badge/Status-Active-success)
 
-*By Haze · [@Noxmirage](https://t.me/Noxmirage) · Channel: [@ErebusRedirect](https://t.me/linksfromerebus)*
+*By Haze · [@Noxmirage](https://t.me/Noxmirage) · Channel: [@linksfromerebus](https://t.me/linksfromerebus)*
+
+[▶️ Watch the 1-minute tutorial](https://youtube.com/shorts/KRKAUY3g7wk?si=G5eeDrXGJ5ZGfX5v)
 
 </div>
 
@@ -18,35 +21,39 @@ Single & bulk checks · Daily limits · Premium plans · Referrals · Tokens · 
 
 ## 📑 Table of contents
 
-1. [Features](#-features)
+1. [What it does](#-what-it-does)
 2. [Quick start](#-quick-start)
-3. [Configuration](#-configuration)
-4. [How users use the bot](#-how-users-use-the-bot)
-5. [Bulk checking & cooldowns](#-bulk-checking--cooldowns)
-6. [Plans & limits](#-plans--limits)
-7. [Free checks: Redeem · Referrals · Tasks](#-free-checks-redeem--referrals--tasks)
+3. [Configuration](#%EF%B8%8F-configuration)
+4. [How users use it](#-how-users-use-it)
+5. [Commands you type in your chats](#-commands-you-type-in-your-chats)
+6. [Deleted-message saver & free trial](#-deleted-message-saver--free-trial)
+7. [Plans, limits & payments](#-plans-limits--payments)
 8. [Admin panel & commands](#-admin-panel--commands)
-9. [Backups & restore](#-backups--restore)
+9. [Storage, privacy & backups](#-storage-privacy--backups)
 10. [Project files](#-project-files)
 11. [Troubleshooting](#-troubleshooting)
 12. [Security notes](#-security-notes)
 
 ---
 
-## 🌟 Features
+## 🌟 What it does
 
 | Area | What you get |
 |---|---|
-| 🔎 **Checking** | Single mode and bulk mode, live spinner, per-mail results (Taken / Free / Unknown) |
-| ⏱ **Cooldowns** | Bulk runs are checked in chunks of 20 with a live countdown timer between chunks |
-| 📊 **Limits** | Daily free limit, 100 / 200 / unlimited premium plans, resets at midnight IST |
-| 💳 **Payments** | UPI QR code is generated in the bot, user sends a screenshot, admin approves with one tap |
-| 🎁 **Free checks** | Redeem tokens, refer friends (+40 checks each), complete admin-made tasks with photo proof |
-| 🛠 **Admin panel** | Statistics, users, premium users, broadcast, ban / unban, message one user, export users |
-| 📈 **Check report** | Total checks, Taken / Free / Unknown, plus the latest 10 free mails from the last hour |
-| 💾 **Backups** | Database sent to your log channel every 30 minutes, one-tap restore |
-| 📝 **Logging** | New users, checks, payments, tasks, bans and backups are logged to a channel |
-| 🎨 **UI** | Small-caps font, animated custom emojis (with automatic plain fallback), self-cleaning chat |
+| 📸 **Archive** | Reply to any media with `shit` in any chat and the copy lands in your bot chat. Photos, videos, GIFs, files, video notes |
+| 🗑 **Deleted-message saver** | When someone deletes a message in your private chats, the bot sends it to you. Premium feature with a **3-day free trial** for everyone |
+| ⚡ **Repeater** | Repeat messages, photos, stickers or voice notes. Presets, random delay, pause / resume, live progress |
+| 🔇 **Shh mode** | Instantly deletes what the *other person* sends in one chat. Timers, allow-lists, optional log |
+| 💬 **Auto reply** | Away mode with schedule, per-chat messages and keyword replies |
+| ⏰ **Scheduler** | `.later` sends at a time you choose, `.del` makes messages delete themselves |
+| 🧩 **Snippets & translate** | Type `.price` to expand saved text, `.tr hi hello` to translate |
+| 🛡 **Chat rules** | Block words, link filter, anti-flood, and a one-tap `.panic` |
+| 📊 **Limits** | Daily free limit, unlimited premium, per-user custom limits, resets at 00:00 UTC |
+| 💳 **Payments** | UPI QR generated in the bot, screenshot goes to the owner, one-tap approve |
+| 🛠 **Admin panel** | Statistics, **revenue**, paged **all-users list**, user info by `@username` or ID, give / remove premium, ban, broadcast |
+| 💾 **Backups** | Database auto-backed up to Telegram and restored automatically after a host crash |
+| 🌐 **Languages** | English and Hindi menus |
+| 🎨 **UI** | Small-caps font, animated custom emojis (plain fallback), self-cleaning chat |
 
 ---
 
@@ -54,241 +61,240 @@ Single & bulk checks · Daily limits · Premium plans · Referrals · Tokens · 
 
 ### 1. Requirements
 
-- Python **3.9 or newer**
-- A bot token from [@BotFather](https://t.me/BotFather)
-- (Optional) a private Telegram channel for logs and backups, with the bot added as **admin**
+- Python **3.10 or newer**
+- A bot token from [@BotFather](https://t.me/BotFather) (enable **Business Mode** for the bot there)
+- A Telegram account with **Telegram Premium** (Business chatbots are a Premium feature of the account that connects the bot)
+- (Recommended) a private channel for backups, with the bot added as **admin**
 
 ### 2. Install
 
 ```bash
-pip install requests colorama "qrcode[pil]"
+pip install -U aiogram python-dotenv aiohttp "qrcode[pil]"
 ```
 
-> The script also tries to install `colorama` and `qrcode` by itself on first run.
+> `aiogram` 3.25 or newer gives you coloured buttons with icons. Older 3.x versions still work, the icons are simply skipped.
 
-### 3. Configure
+### 3. Create a `.env` file next to the bot
 
-Open `FakeMailCheckerBotv2.py` and set the values listed in [Configuration](#-configuration):
-at minimum `BOT_TOKEN`, `OWNER_ID`, and your log channel ID.
+```env
+BOT_TOKEN=123456:your-token-here
+OWNER_ID=123456789
+CHANNEL=@yourchannel
+GROUP=@yourgroup
+BACKUP_CHAT_ID=-1001234567890
+MEDIA_CHAT_ID=-1001234567890
+```
 
 ### 4. Run
 
 ```bash
-python FakeMailCheckerBotv2.py
+python botV6.py
 ```
 
-You should see the "Running" banner. Open your bot in Telegram and send `/start`.
+You should see `Media Archive Bot Started Successfully!`. Open the bot and send `/start`.
 
-> ⚠️ **Run only ONE copy of the bot per token.** If an old copy is still running, Telegram splits updates between
-> the two and buttons become slow or unreliable. The bot prints a clear warning when it detects this.
+### 5. Connect your account
+
+1. In Telegram open **Settings → Business → Chatbots**.
+2. Add your bot.
+3. Give it the permissions you need: **reply to messages** (archive, repeater, auto-reply) and **manage / delete messages** (`.shh`, `.del`, rules, command cleanup).
+
+> ⚠️ **Run only ONE copy of the bot per token.** Two copies split the updates and buttons become unreliable.
 
 ---
 
 ## ⚙️ Configuration
 
-Everything lives at the top of the second half of `FakeMailCheckerBotv2.py`.
+Settings are read from `.env` (or environment variables). The options marked ✏️ can also be edited at the top of `botV6.py`.
 
 ### Required
 
-| Setting | Where | Meaning |
-|---|---|---|
-| `BOT_TOKEN` | top of file | Your bot token from @BotFather |
-| `OWNER_ID` | config block | Your numeric Telegram ID. Receives payment and task proofs and is the main admin |
-| `LOG_CHANNEL` | config block | Channel ID such as `-1001234567890`. Needed for logs and **automatic backups** |
+| Setting | Meaning |
+|---|---|
+| `BOT_TOKEN` | Your bot token from @BotFather |
+| `OWNER_ID` | Your numeric Telegram ID. Main admin, receives payment screenshots |
 
 ### Optional
 
 | Setting | Default | Meaning |
 |---|---|---|
-| `ADMIN_IDS` | `[]` | Extra admin IDs (full admin access) |
-| `UPI_ID` / `UPI_NAME` | in file | UPI address and display name used for the payment QR |
-| `DB_PATH` | `erebus_checker.sqlite3` | Database file |
-| `EMOJI_FILE` | `emoji_ids.json` | Optional file to override animated emoji IDs |
-| `USE_CUSTOM_EMOJI` | `1` | Set `0` if animated emojis don't show for your bot |
-| `FREE_DAILY` | `30` | Free checks per day |
-| `BULK_MAX` | `500` | Maximum mails accepted in one bulk request |
-| `MAX_PENDING` | `3` | Maximum pending payment screenshots per user |
-| `PLANS` | see below | Premium plans (name, limit, days, price) |
-| `REF_BONUS` | `40` | Bonus checks per successful referral |
-| `CHUNK_SIZE`, `CHUNK_COOLDOWN`, `LONG_COOLDOWN_EVERY`, `LONG_COOLDOWN`, `UNL_COOLDOWN_EVERY`, `UNL_COOLDOWN` | `20, 10, 60, 20, 100, 20` | Bulk cooldown rules |
-| `BACKUP_EVERY` | `1800` | Seconds between automatic backups |
-
-`UPI_ID`, `UPI_NAME`, `DB_PATH`, `EMOJI_FILE`, `USE_CUSTOM_EMOJI` and `LOG_CHANNEL` can also be set through
-environment variables of the same name, or simply edited directly in the file.
+| `CHANNEL` / `GROUP` | in file | Users must join both before using the bot |
+| `FREE_DAILY_LIMIT` | `20` | Free archives per day |
+| `UPI_ID` / `UPI_NAME` | in file | UPI address and name on the payment QR |
+| `PLANS` ✏️ | `1 / 2 / 3 months` | `{months: (days, price)}` → ₹29, ₹39, ₹49 |
+| `DB_PATH` | `bot_data.sqlite3` | Database file |
+| `SAVE_MEDIA_LOCALLY` ✏️ | `0` (off) | `1` keeps every archived file in `./saved_media`. Off means files are **temporary** and deleted after delivery and backup |
+| `TG_MEDIA_BACKUP` ✏️ | `1` (on) | Send a copy of every archived file to `MEDIA_CHAT_ID` |
+| `MEDIA_CHAT_ID` | falls back to `BACKUP_CHAT_ID`, then your chat | Private channel (`-100…`) that stores media copies |
+| `BACKUP_CHAT_ID` | your chat | Where the database backup is posted and pinned |
+| `BACKUP_EVERY_HOURS` | `3` | Hours between automatic database backups |
+| `TRIAL_DAYS` ✏️ | `3` | Free trial of the deleted-message saver |
+| `DELETED_CACHE_HOURS` | `72` | How long copies of incoming messages are kept for the saver |
+| `ANNOUNCE_TRIAL_ON_START` | `1` | Tell existing users about the trial once after an update |
+| `USE_CUSTOM_EMOJI` | `1` | Set `0` if animated emojis don't show |
+| `EMOJI_FILE` | `emoji_ids.json` | Animated-emoji overrides (set with `/emojis`) |
 
 ---
 
-## 👤 How users use the bot
+## 👤 How users use it
 
-1. Send `/start` to see the main menu.
-2. **Single Mode** – send a username (`john`) or an address (`john@hi2.in`).
-3. **Bulk Mode** – send many addresses separated by spaces or commas.
-4. Results show **❌ Taken**, **✅ Not taken / 🍀 Free**, or **❔ Unknown**.
+1. Send `/start`, join the channel and group, tap **I've Joined**.
+2. Connect the bot under **Settings → Business → Chatbots**.
+3. In any chat, **reply to a photo / video / file with `shit`**. The copy arrives in your bot chat.
+4. Only the account owner can trigger it. The `shit` message itself stays in your chat history as you wrote it.
 
-Supported domains: `hi2.in` and `telegmail.com`. A name without `@` is checked on `hi2.in`.
-
-**Main menu buttons**
+**Main menu**
 
 | Button | What it does |
 |---|---|
-| Single Mode / Bulk Mode | Start checking |
-| My Premium | Plan, expiry, daily limit |
-| My Statistics | Total checks, today's usage, join date |
+| How To Archive | Steps and the video tutorial |
+| My Premium / My Statistics | Plan, expiry, today's usage, total archived |
+| Membership | Re-check channel and group membership |
 | Buy Premium | Plans and UPI payment |
-| Redeem | Enter a token code |
-| Free Checks | Redeem, Refer & Earn, Tasks |
-| Updates | Your channel link |
-| Admin Panel | Only visible to admins |
-
-Notes:
-- **Unknown** results (when the check could not be completed) are **not** counted against the limit.
-- Messages that are no longer needed are cleaned up automatically to keep the chat tidy.
-- `/cancel` stops any step in progress.
+| Repeated Message | Configure the repeater |
+| Deleted Messages | Deleted-message saver status, on / off |
+| Auto Reply | Away mode, schedule, timezone |
+| Tools | Keyword replies, snippets, scheduled messages, activity log, commands, panic |
+| Language | English or हिन्दी |
 
 ---
 
-## ⏱ Bulk checking & cooldowns
+## ⌨️ Commands you type in your chats
 
-Bulk requests are processed in **chunks of 20 mails**. After each chunk the bot shows a live timer, then continues on its own:
+These work in **your own chats** through the Business connection. Only you can use them, and the bot removes the command message again. Everything is also configurable from the bot menus.
 
-```
-Cooldown ➛ 7s
-██████░░░░
-Next 20 mails start automatically
-```
+### ⚡ Repeater
 
-| User type | Cooldown rule |
+| Command | What it does |
 |---|---|
-| Free & premium (100 / 200) | **10 s** after every 20 mails, **20 s** after every 60 mails |
-| Unlimited (and admins) | **20 s** after every 100 mails |
+| `.Axclerate` | Start with your saved settings |
+| `.Axclerate 20 0.5 hi \| hello` | 20 messages, every 0.5 s, cycling the texts |
+| `.Axclerate 20 0.5-2` | Random delay between 0.5 and 2 seconds |
+| `.Axclerate morning` | Start a saved **preset** |
+| `.Axpause` · `.Axresume` · `.Axstop` | Control the running repeater (buttons on the live status message work too) |
 
-Examples for free / premium: 20 → 10 s · 40 → 10 s · 60 → **20 s** · 80 → 10 s · 100 → 10 s · 120 → **20 s** …
+Minimum interval is **0.1 s**. The cycle can contain text, photos, stickers, voice notes, videos and files (add them from **Repeated Message → Add Media**).
 
-There is no cooldown after the final mail. Each chunk gets its own message, so very large batches never hit Telegram's message-length limit. A short summary is sent at the end.
+> ⚠️ Fast repeating can get your Telegram account limited or banned. The bot warns about this and does **not** add restrictions: use at your own risk.
+
+### 🔇 Shh mode
+
+| Command | What it does |
+|---|---|
+| `.shh` | Toggle for **this chat only**. The other person's messages are deleted instantly, yours never are |
+| `.shh 30m` | Turn on for 30 minutes (`s`, `m`, `h`, `d`) |
+| `.shh allow urgent \| help` | Keep messages containing these words |
+| `.shh allowmedia photo voice` | Keep these media types |
+| `.shh log` | Save a copy of what is deleted (premium / trial) |
+| `.shh off` · `.mute` | Turn off · alias of `.shh` |
+
+### 💬 Auto reply, scheduling and more
+
+| Command | What it does |
+|---|---|
+| `.afk 2h in a meeting` · `.back` | Away reply on / off (each chat gets it once every 6 hours) |
+| `.afkhere message` | Different away message for just this chat |
+| `.later 30m text` · `.later 21:30 text` | Send later (clock times use your timezone) |
+| `.del 10s text` | Send text that deletes itself. Or reply to your own message with `.del 10s` |
+| `.save` | Reply to any message to save it into the bot |
+| `.tr hi how are you` | Turn your message into Hindi (any language code). Reply with `.tr en` to read a message privately |
+| `.kw add price \| It costs ₹99` | Keyword auto-reply (`.kw del`, `.kw list`) |
+| `.snip add price \| It costs ₹99` | Snippet, then type `.price` to expand it |
+| `.block spam \| scam` · `.block off` | Delete messages from this person containing these words |
+| `.nolinks` · `.antispam` | Toggle link filter / flood filter for this chat |
+| `.panic` (or `/panic`) | Stop all repeaters, shh, scheduled sends and away mode |
 
 ---
 
-## 💳 Plans & limits
+## 🗑 Deleted-message saver & free trial
 
-| Plan | Checks / day | Validity | Price |
+- Saves what the **other person** sent in your **private chats** (text, photos, videos, voice notes, stickers, files) and sends it to you in the bot the moment they delete it.
+- Needs the bot connected under **Settings → Business → Chatbots**.
+- **Premium feature**, but **every user gets a 3-day free trial**. New users start the trial when they join, existing users when the update goes live. Everyone is told about it once.
+- Copies are kept for `DELETED_CACHE_HOURS` (72 by default), then removed. Turn the saver off any time from **Deleted Messages**.
+- Messages the bot deletes itself (`.shh`, block rules) are never saved.
+
+---
+
+## 💳 Plans, limits & payments
+
+| Plan | Archives / day | Validity | Price |
 |---|---|---|---|
-| Free | 30 | – | Free |
-| Premium 100 | 100 | 7 days | ₹21 |
-| Premium 200 | 200 | 7 days | ₹31 |
-| Premium Unlimited | ∞ | 7 days | ₹49 |
+| Free | 20 | – | Free |
+| Premium 1 month | Unlimited | 30 days | ₹29 |
+| Premium 2 months | Unlimited | 60 days | ₹39 |
+| Premium 3 months | Unlimited | 90 days | ₹49 |
 
-Daily counters reset at **midnight IST**. Change plans or prices in the `PLANS` dictionary.
+Daily counters reset at **00:00 UTC**. Premium also unlocks the deleted-message saver after the trial ends.
 
 **Payment flow**
 
 1. User opens **Buy Premium** and picks a plan.
-2. The bot generates a **UPI QR** (and shows the UPI ID).
+2. The bot generates a **UPI QR** with the amount filled in.
 3. User pays, taps **I've Paid** and sends a screenshot.
 4. The screenshot reaches the owner with **Approve / Reject** buttons.
-5. On approval the plan activates instantly and the user is notified. Buying the same plan again extends it.
-
----
-
-## 🎁 Free checks: Redeem · Referrals · Tasks
-
-Everything earned here goes into a **bonus balance**. Bonus checks are used **after** the user's daily checks run out, and they never expire.
-
-The **Free Checks** button appears on the main menu, on the Buy Premium screen, and on the "daily limit reached" screen.
-
-### 🔑 Redeem tokens
-
-- Admin creates a token, for example `/token 50 10 7` → *50 checks, usable by 10 users, valid for 7 days*.
-- Custom code: `/token PROMO 50 10`.
-- Users press **Redeem** and send the code. Each user can use a code once; expired or full codes are rejected.
-- After 5 wrong codes a user is locked out for 10 minutes.
-
-### 👥 Refer & Earn
-
-- Every user has a personal link: `https://t.me/<your_bot>?start=ref_<user_id>` and a **Share** button.
-- When a **brand-new** user starts the bot through the link, the referrer gets **+40 checks** and a notification.
-- Existing users, repeat starts and self-referrals do not count.
-
-### 📝 Tasks
-
-- Admin adds a task: **title**, **description** (put the video or link here) and a **reward in checks**.
-- Users open **Tasks**, pick one, complete it, and send a **screenshot** as proof.
-- The proof goes to the owner with **Approve / Reject**. Approval adds the reward immediately.
-- A task can be completed once per user. Rejected proofs can be submitted again.
+5. On approval premium activates instantly and the user is notified. Buying again extends it.
 
 ---
 
 ## 🛠 Admin panel & commands
 
-Open the panel with `/admin` or the **Admin Panel** button (admins only).
-
-### Panel buttons
+Open it with the **Admin Panel** button on the main menu (owner only).
 
 | Button | Purpose |
 |---|---|
-| Statistics | Users, active users, premium, banned, joined today, checks today, revenue, pending payments |
-| Users / Premium Users | Latest users and active premium members |
-| Broadcast | Send any message or media to all users, with confirmation |
-| Export Users | CSV of all users |
-| Ban / Unban, User Info, Message One User | User management |
-| **Check Report** | Checks done, Taken / Free / Unknown for *last hour, today, all time* and the **latest 10 free mails from the last hour** |
-| **Backup Now / Restore Backup** | Manual backup and restore |
-| **Create Token / Tokens** | Make and manage redeem codes |
-| **Tasks** | Add and remove tasks, see pending proofs |
-
-### Commands
+| Statistics | Users, active, premium, **free-trial users**, banned, joined today, archives today, pending payments, revenue |
+| **Revenue** | All time, today, 7 / 30 days, this month, by month and by plan. Counts only plans **users bought** and you approved, never premium you gave yourself |
+| **All Users** | Every user, paged, with a **Download List** CSV button. Names link to profiles |
+| Premium Users | Active premium members |
+| User Info | Details of any user by `@username` **or numeric ID** |
+| Give / Remove Premium | Extend or remove premium with a few taps |
+| Ban User / Unban User | Block or unblock |
+| Broadcast / Message One User | Message everyone or one person |
 
 | Command | What it does |
 |---|---|
-| `/admin` · `/stats` · `/users` | Panel, quick statistics, CSV export |
-| `/userinfo @user` | Full details of a user |
-| `/premium @user days [p100\|p200\|unl]` | Grant premium |
-| `/removepremium @user` | Remove premium |
+| `/userinfo @user` or `/userinfo 123456789` | Full details of a user |
+| `/premium @user days` · `/removepremium @user` | Grant / remove premium |
 | `/setlimit @user number\|default` | Custom daily limit |
-| `/givechecks @user number` | Add bonus checks |
 | `/ban @user` · `/unban @user` | Block or unblock |
-| `/msg @user text` | Send a private message |
-| `/token [CODE] checks max_users [days]` | Create a redeem token |
-| `/tokens` · `/deltoken CODE` | List or delete tokens |
-| `/tasks` | Manage tasks |
-| `/backup` · `/restore` | Back up or restore the database |
-| `/cancel` | Cancel the current step |
+| `/msg @user text` | Private message |
+| `/emojis` · `/emojireset name\|all` | Animated emoji setup |
+| `/backup` · `/restore` | Back up now · reply to a backup file to restore |
 
-A user must have started the bot once before they can be found by `@username`.
+Every user command accepts an `@username` **or** a numeric ID. A person must have started the bot once to be found.
 
 ---
 
-## 💾 Backups & restore
+## 🔐 Storage, privacy & backups
 
-**Automatic backups**
+**Archived media**
 
-- Every **30 minutes** (first one about a minute after start) the bot copies the database and posts it to your log channel as `erebus_backup_YYYYMMDD_HHMM.sqlite3`.
-- Also triggered after every approved payment and by **Backup Now** / `/backup` (a copy is also sent to your chat).
-- Requires `LOG_CHANNEL` to be set and the bot to be an admin of that channel.
+- By default files are **temporary**: downloaded, handed to the owner, copied to the Telegram backup channel, then **deleted from the server**.
+- Set `SAVE_MEDIA_LOCALLY=1` to also keep them in `./saved_media`.
+- The backup-channel caption names the owner and chat by **@username**, or by profile name as a tap-to-open link when there is no username.
+- The privacy text shown in **How To Archive** always matches your settings: if you turn off both `TG_MEDIA_BACKUP` and `SAVE_MEDIA_LOCALLY` it says *"No backup is saved, for your privacy. You can only view your saved photos here in the bot."*
 
-**Restore**
+**Database backups**
 
-1. Open **Admin Panel → Restore Backup** (or send `/restore`).
-2. Send a backup file to the bot **as a document**.
-3. The bot checks that it's a valid, uncorrupted Erebus database, saves a safety copy of the current data as `erebus_checker.sqlite3.before_restore`, then loads the backup.
-4. A wrong or corrupted file is rejected and your current data stays untouched.
-
-Backups include users, premium plans, payments, limits, tokens, tasks, referrals and check history. Older backups are upgraded automatically when restored.
-
-> 💡 Hosting on a platform with temporary storage? Keep the log channel set up. If the server resets, just restore the latest backup from the channel.
+- The database is snapshotted every `BACKUP_EVERY_HOURS`, sent to `BACKUP_CHAT_ID` and **pinned**. It is also backed up right after every approved payment.
+- If the server resets, the bot finds the pinned backup on startup and **restores it automatically**.
+- `/backup` backs up now. Reply to a backup file with `/restore` to load it (a safety copy is taken first).
+- Older databases are upgraded automatically when the new version starts.
 
 ---
 
 ## 📂 Project files
 
 ```
-FakeMailCheckerBotv2.py      the whole bot (engine + UI + accounts layer)
-README.md                    this file
-erebus_checker.sqlite3       database (created automatically)
-erebus_checker.sqlite3.before_restore   safety copy created during a restore
-emoji_ids.json               optional animated-emoji overrides
+botV6.py                 the whole bot
+README.md                this file
+.env                     your settings (never share it)
+bot_data.sqlite3         database (created automatically)
+emoji_ids.json           optional animated-emoji overrides
+saved_media/             only used when SAVE_MEDIA_LOCALLY=1
+bot.log                  log file
 ```
-
-The mail-checking engine (`solve_recaptcha_hi2` and `check_hi2_email`) and the `run_bot()` loop are kept as they were; the UI, limits, payments and admin tools wrap around them.
 
 ---
 
@@ -296,23 +302,26 @@ The mail-checking engine (`solve_recaptcha_hi2` and `check_hi2_email`) and the `
 
 | Problem | Fix |
 |---|---|
-| Buttons are slow or sometimes do nothing | Make sure **only one** copy of the bot is running. The console shows `ANOTHER copy of this bot is running` when it detects a clash |
-| Animated emojis or colored buttons don't appear | Set `USE_CUSTOM_EMOJI=0`. The bot also falls back to plain emojis automatically |
-| No backups or logs arrive | Set `LOG_CHANNEL` to your channel ID (starts with `-100`) and add the bot as channel admin |
-| Payment QR missing | Install the QR library: `pip install "qrcode[pil]"`. Users still see the UPI ID without it |
-| Many "Unknown" results | The site's captcha step failed; try again later or reduce speed. Unknown results are not charged |
-| "User not found" for `@username` | The user must have started the bot at least once. Use their numeric ID instead |
-| Restore says "not an Erebus backup" | Send a file created by this bot (`erebus_backup_*.sqlite3`) as a document |
-| Slow responses on a phone or distant server | The bot makes several network calls per tap; a faster connection to Telegram helps |
+| Nothing happens when I reply `shit` | Check **Settings → Business → Chatbots**: the bot must be added and allowed to reply. Make sure you started the bot at least once |
+| `.shh`, `.del` or commands don't delete messages | Give the bot the **manage / delete messages** permission in the Business chatbot settings |
+| Deleted messages aren't arriving | The trial may have ended (premium needed), the saver may be off in **Deleted Messages**, or the bot isn't connected |
+| Messages flash before `.shh` deletes them | Telegram delivers a message to you before the bot can delete it. The bot deletes it as fast as it can |
+| Buttons are slow or do nothing | Make sure only **one** copy of the bot is running |
+| Animated emojis or coloured buttons don't show | Set `USE_CUSTOM_EMOJI=0`, or `pip install -U aiogram` |
+| Payment QR missing | `pip install "qrcode[pil]"`. Users still see the UPI ID |
+| No backups arrive | Set `BACKUP_CHAT_ID` to your channel ID (starts with `-100`) and make the bot an **admin** there |
+| `.tr` says translation failed | It uses Google Translate's unofficial web endpoint, which can be blocked from some hosts. Try again later |
+| "User not found" | The user must have started the bot once. Try their numeric ID |
 
 ---
 
 ## 🔒 Security notes
 
-- **Never share your bot token.** If it has ever been posted publicly, revoke it in @BotFather (`/revoke`) and put the new one in `BOT_TOKEN`.
-- Only IDs in `OWNER_ID` / `ADMIN_IDS` can use admin features. Admin buttons and commands are re-checked on every press.
-- Keep your log channel private, since backups contain user data.
-- Referral rewards can be farmed with extra Telegram accounts. If that becomes a problem, lower `REF_BONUS` or ask for a per-user referral cap.
+- **Never share your bot token or `.env`.** If a token was ever posted publicly, revoke it in @BotFather (`/revoke`).
+- Only `OWNER_ID` can use admin features, and every admin button and command is re-checked on each press.
+- Keep your backup and media channels **private**: they contain user data.
+- The deleted-message saver stores other people's messages for a short time. Use it responsibly and respect the privacy and laws that apply to you and the people you chat with.
+- Spam tools like the repeater can get your Telegram account restricted. You are responsible for how you use them.
 
 ---
 
