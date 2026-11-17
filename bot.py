@@ -1114,6 +1114,7 @@ def _single_job(chat, email):
         stop = threading.Event(); fin = animate_check(chat, email, stop)
         res = check_hi2_email(email); stop.set()
         log_check(chat, email, res)
+        _stream_advance(chat, user_limit(chat) is None)
         if res != 'unknown': add_usage(chat, 1)
         if res in _STATUS: e, label = _STATUS[res]; status = f"{E(e)} <b>{label}</b>"
         else: status = "💭 <b>Uɴᴋɴᴏᴡɴ</b>"
@@ -1133,6 +1134,10 @@ def _single_job(chat, email):
         _release(chat)
 
 def process_single(chat_id, raw_input):
+    _cl = cooldown_left(chat_id)
+    if _cl:
+        with _tl: _LAST.pop(chat_id, None)
+        return _cooldown_notice(chat_id, _cl)
     tidy_last(chat_id)
     A = (raw_input or '').strip().lower()
     if not A: return
@@ -1156,6 +1161,40 @@ def process_single(chat_id, raw_input):
 
 def _bulk_render(lines, header_extra=''):
     return "\n".join([bq(f"{E('stats')} {sc('Availability report')} 💐"), ""] + lines + ([header_extra] if header_extra else []))
+
+# ── cooldown that follows the USER across requests (single + bulk count together) ──
+STREAM_RESET = 120      # seconds of silence after which the mail counter starts again
+_STREAM = {}            # uid -> {'done': mails since reset, 'until': cooldown end, 'last': last activity}
+_sl = threading.Lock()
+
+def _cd_for(count, unlimited):
+    """cooldown (seconds) that applies right after the `count`-th mail of a run"""
+    if unlimited: return UNL_COOLDOWN if count % UNL_COOLDOWN_EVERY == 0 else 0
+    if count % LONG_COOLDOWN_EVERY == 0: return LONG_COOLDOWN
+    if count % CHUNK_SIZE == 0: return CHUNK_COOLDOWN
+    return 0
+
+def _stream_advance(uid, unlimited):
+    """call once per checked mail. Returns the cooldown seconds that now starts (0 = none)."""
+    now_ = time.time()
+    with _sl:
+        st = _STREAM.setdefault(uid, {'done': 0, 'until': 0.0, 'last': 0.0})
+        if now_ >= st['until'] and now_ - st['last'] > STREAM_RESET: st['done'] = 0
+        st['done'] += 1; st['last'] = now_
+        wait = _cd_for(st['done'], unlimited)
+        if wait: st['until'] = now_ + wait
+        return wait
+
+def cooldown_left(uid):
+    with _sl:
+        st = _STREAM.get(uid)
+        return max(0, int(st['until'] - time.time() + 0.99)) if st else 0
+
+def _cooldown_notice(chat, left):
+    notice(chat, "\n".join([bq(f"{E('time')} {sc('Cooldown')}"), "",
+        row('time', 'Please Wait', f"<b>{left}s</b>"), SEP,
+        f"{E('bolt')} {sc('Send your next mails after the cooldown ends.')}"]),
+        ttl=max(4, min(left + 1, 12)), reply_markup=back_kb())
 
 def _cooldown_secs(done, total, unlimited):
     """Cooldown to apply after `done` mails of `total` (0 = none).
@@ -1199,8 +1238,9 @@ def _bulk_job(chat, items):
             line = f"{i}. {a} <code>{esc(em)}</code> ➛ <b>{b_}</b>"
             chunk_lines.append(line); all_lines.append(line)
             time.sleep(0.2)
-            wait = _cooldown_secs(i, n, unlimited)
-            if wait and mid:                                   # cooldown with a live countdown
+            wait = _stream_advance(chat, unlimited)
+            if wait and i == n: pass                           # last mail: cooldown starts now, the next request waits
+            elif wait and mid:                                   # cooldown with a live countdown
                 end = time.time() + wait
                 last_left = None
                 while True:
@@ -1227,7 +1267,8 @@ def _bulk_job(chat, items):
             row('err', 'Taken', cnt['t']) + "  ·  " + row('ok', 'Free', cnt['f']),
             row('bolt', 'Left Today', '∞' if rem is None else rem),
             row('channel', 'Channel', '@ErebusRedirect'),
-        ] + ([f"{E('warn')} {sc('Unknown results are not counted against your limit.')}"] if cnt['u'] else []))
+        ] + ([row('time', 'Next Check In', f"{cooldown_left(chat)}s")] if cooldown_left(chat) else [])
+          + ([f"{E('warn')} {sc('Unknown results are not counted against your limit.')}"] if cnt['u'] else []))
         send_message(chat, final, reply_markup=_result_kb())
         body = ''
         for l in all_lines:
@@ -1266,6 +1307,10 @@ def process_bulk(chat_id, text):
     if not tokens or bad:                      # anything outside name@hi2.in / name@telegmail.com -> rewrite
         with _tl: _LAST.pop(C, None)           # keep their message so they can edit it
         return _bulk_rejected(C, bad)
+    _cl = cooldown_left(C)
+    if _cl:
+        with _tl: _LAST.pop(C, None)
+        return _cooldown_notice(C, _cl)
     tidy_last(C)
     seen = set(); B = []
     for t in tokens:
